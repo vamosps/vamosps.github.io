@@ -39,12 +39,13 @@
   <!-- Google Fonts Cairo -->
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   
-  <!-- Canvas Confetti for Festive Order Celebration -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- Canvas Confetti for Festive Order Celebration (Deferred for zero loading lag) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   
   <style>
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
     body { 
       font-family: 'Cairo', sans-serif; 
@@ -52,6 +53,9 @@
       color: #f4f4f5;
       overflow-x: hidden;
       width: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
     .silver-gradient-text {
       background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 50%, #e4e4e7 100%);
@@ -62,18 +66,25 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
     .glass-card {
-      background: rgba(24, 24, 27, 0.8);
-      backdrop-filter: blur(12px);
+      background: rgba(24, 24, 27, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.1);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    @media (min-width: 768px) {
+      .glass-card {
+        backdrop-filter: blur(12px);
+      }
     }
     .btn-silver {
       background: linear-gradient(135deg, #f4f4f5 0%, #d4d4d8 50%, #a1a1aa 100%);
       color: #09090b;
       box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+      transform: translateZ(0);
     }
     .btn-silver:hover {
       background: linear-gradient(135deg, #ffffff 0%, #e4e4e7 100%);
-      transform: translateY(-1px);
+      transform: translateY(-1px) translateZ(0);
     }
     @keyframes pulse-subtle {
       0%, 100% { transform: scale(1); }
@@ -81,6 +92,8 @@
     }
     .whatsapp-pulse {
       animation: pulse-subtle 2.5s infinite ease-in-out;
+      transform: translateZ(0);
+      will-change: transform;
     }
     /* Hide scrollbars cleanly while retaining smooth swipe & scroll */
     .no-scrollbar::-webkit-scrollbar {
@@ -120,6 +133,12 @@
       user-select: none !important;
       -webkit-user-drag: none !important;
       user-drag: none !important;
+    }
+
+    /* High Performance Smooth Rendering Below the Fold */
+    .perf-contain {
+      content-visibility: auto;
+      contain-intrinsic-size: 280px;
     }
   </style>
 </head>
@@ -297,7 +316,7 @@
     </section>
 
     <!-- Order Form Section -->
-    <section id="orderSection" class="glass-card p-4 sm:p-5 rounded-2xl space-y-3.5 shadow-2xl border border-zinc-700/60">
+    <section id="orderSection" class="glass-card p-4 sm:p-5 rounded-2xl space-y-3.5 shadow-2xl border border-zinc-700/60 perf-contain">
       <div class="text-center space-y-1">
         <span class="inline-flex items-center gap-1 bg-emerald-950/80 text-emerald-300 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
           <i class="fa-solid fa-shield-check text-emerald-400"></i>
@@ -511,7 +530,7 @@
     </section>
 
     <!-- Features Section -->
-    <section class="glass-card p-4 sm:p-5 rounded-2xl space-y-2.5 sm:space-y-3">
+    <section class="glass-card p-4 sm:p-5 rounded-2xl space-y-2.5 sm:space-y-3 perf-contain">
       <h3 class="font-bold text-xs sm:text-sm text-zinc-200 border-b border-zinc-800/80 pb-2 flex items-center gap-2">
         <i class="fa-solid fa-star text-amber-400 text-xs"></i>
         <span id="t_why_title">لماذا تختار هذا الطقم من Vamos؟</span>
@@ -533,7 +552,7 @@
     </section>
 
     <!-- Customer Reviews / Social Proof (With Clean 1 2 3 4 5 Pagination) -->
-    <section class="glass-card p-4 sm:p-5 rounded-2xl space-y-3 border border-zinc-800 shadow-xl" id="reviewsSection">
+    <section class="glass-card p-4 sm:p-5 rounded-2xl space-y-3 border border-zinc-800 shadow-xl perf-contain" id="reviewsSection">
       <!-- Section Header -->
       <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
         <h3 class="font-bold text-xs sm:text-sm text-zinc-200 flex items-center gap-1.5">
