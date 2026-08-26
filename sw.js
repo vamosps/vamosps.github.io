@@ -1,7 +1,7 @@
 const CACHE_NAME = 'vamos-jewelry-cache-v1';
 const ASSETS_TO_CACHE = [
   './index.html',
-  './admin.html',
+  './vamosads.html',
   './manifest.json'
 ];
 
