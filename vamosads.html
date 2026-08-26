@@ -4695,7 +4695,7 @@
           return;
         }
       }
-      container.innerHTML = `<video src="${cleanUrl}" controls playsinline class="w-full h-full object-contain"></video>`;
+      container.innerHTML = `<video src="${cleanUrl}" controls controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture oncontextmenu="return false;" playsinline class="w-full h-full object-contain"></video>`;
     }
 
     function setSampleImage(url) {

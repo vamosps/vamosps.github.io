@@ -79,6 +79,19 @@
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
     }
+    /* Hide browser default video download buttons and context menu */
+    video::-webkit-media-controls-panel {
+      display: none !important;
+      -webkit-appearance: none;
+    }
+    video::-webkit-media-controls-download-button,
+    video::-internal-media-controls-download-button {
+      display: none !important;
+    }
+    video::-webkit-media-controls-overflow-button,
+    video::-internal-media-controls-overflow-button {
+      display: none !important;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-28 relative">
@@ -1425,17 +1438,8 @@
             `;
           }
         } else {
-          videoContainer.innerHTML = `
-            <video 
-              src="${vUrl}" 
-              controls 
-              playsinline 
-              autoplay 
-              loop
-              poster="${mediaData.poster || mediaData.src || ''}" 
-              class="w-full h-full object-contain"
-            ></video>
-          `;
+          videoContainer.innerHTML = buildLuxuryVideoPlayer('galleryCustomVideo', vUrl, mediaData.poster || mediaData.src || '', true, false);
+          attachCustomVideoProgress('galleryCustomVideo');
         }
       } else if (mainImg) {
         if (videoContainer) {
@@ -2372,6 +2376,136 @@
       }
     }
 
+    // ========================================================
+    // Custom Luxury Video Player Component (بدون أزرار تنزيل المتصفح)
+    // ========================================================
+    function buildLuxuryVideoPlayer(videoId, videoSrc, posterSrc = '', isAutoplay = true, isMuted = false) {
+      return `
+        <div class="relative w-full h-full bg-black group select-none flex items-center justify-center overflow-hidden" oncontextmenu="return false;">
+          <video 
+            id="${videoId}"
+            src="${videoSrc}" 
+            playsinline 
+            ${isAutoplay ? 'autoplay' : ''} 
+            ${isMuted ? 'muted' : ''} 
+            loop 
+            preload="metadata" 
+            controlsList="nodownload nofullscreen noremoteplayback" 
+            disablePictureInPicture
+            oncontextmenu="return false;"
+            poster="${posterSrc}"
+            class="w-full h-full object-contain cursor-pointer"
+            onclick="toggleCustomVideoPlay('${videoId}')"
+          ></video>
+
+          <!-- Center Animated Indicator -->
+          <button 
+            type="button" 
+            id="centerBtn_${videoId}"
+            onclick="toggleCustomVideoPlay('${videoId}')"
+            class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 flex items-center justify-center text-lg cursor-pointer transition-all duration-300 opacity-0 pointer-events-none transform scale-90 shadow-2xl"
+          >
+            <i id="centerIcon_${videoId}" class="fa-solid fa-play"></i>
+          </button>
+
+          <!-- Bottom Control Bar (No download, no 3 dots, clean sleek gold interface) -->
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2.5 pt-5 flex flex-col gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto">
+            <!-- Progress Line -->
+            <div class="w-full bg-zinc-800/80 h-1.5 rounded-full overflow-hidden cursor-pointer relative shadow-inner" onclick="seekCustomVideo(event, '${videoId}')">
+              <div id="prog_${videoId}" class="bg-gradient-to-r from-amber-400 to-emerald-400 h-full w-0 transition-all duration-100 rounded-full"></div>
+            </div>
+
+            <!-- Controls Row -->
+            <div class="flex items-center justify-between text-white text-xs px-1">
+              <div class="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  onclick="toggleCustomVideoPlay('${videoId}')" 
+                  class="text-zinc-200 hover:text-amber-400 transition cursor-pointer p-0.5 text-xs" 
+                  title="تشغيل / إيقاف"
+                >
+                  <i id="playIcon_${videoId}" class="fa-solid ${isAutoplay ? 'fa-pause' : 'fa-play'}"></i>
+                </button>
+                <button 
+                  type="button" 
+                  onclick="toggleCustomVideoMute('${videoId}')" 
+                  class="text-zinc-200 hover:text-emerald-400 transition cursor-pointer p-0.5 text-xs" 
+                  title="كتم / تشغيل الصوت"
+                >
+                  <i id="muteIcon_${videoId}" class="fa-solid ${isMuted ? 'fa-volume-xmark' : 'fa-volume-high text-emerald-400'}"></i>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-1 text-[9px] text-zinc-400 font-bold bg-zinc-900/80 border border-zinc-700/60 px-2 py-0.5 rounded-md">
+                <i class="fa-solid fa-repeat text-amber-400 text-[8px]"></i>
+                <span>تكرار تلقائي</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleCustomVideoPlay(videoId) {
+      const vid = document.getElementById(videoId);
+      const playIcon = document.getElementById(`playIcon_${videoId}`);
+      const centerBtn = document.getElementById(`centerBtn_${videoId}`);
+      const centerIcon = document.getElementById(`centerIcon_${videoId}`);
+      if (!vid) return;
+
+      if (vid.paused) {
+        vid.play();
+        if (playIcon) playIcon.className = 'fa-solid fa-pause';
+        if (centerIcon) centerIcon.className = 'fa-solid fa-play';
+      } else {
+        vid.pause();
+        if (playIcon) playIcon.className = 'fa-solid fa-play';
+        if (centerIcon) centerIcon.className = 'fa-solid fa-pause';
+      }
+
+      if (centerBtn) {
+        centerBtn.classList.remove('opacity-0', 'scale-90');
+        centerBtn.classList.add('opacity-100', 'scale-100');
+        setTimeout(() => {
+          centerBtn.classList.remove('opacity-100', 'scale-100');
+          centerBtn.classList.add('opacity-0', 'scale-90');
+        }, 450);
+      }
+    }
+
+    function toggleCustomVideoMute(videoId) {
+      const vid = document.getElementById(videoId);
+      const muteIcon = document.getElementById(`muteIcon_${videoId}`);
+      if (!vid) return;
+
+      vid.muted = !vid.muted;
+      if (muteIcon) {
+        muteIcon.className = vid.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high text-emerald-400';
+      }
+    }
+
+    function seekCustomVideo(e, videoId) {
+      const vid = document.getElementById(videoId);
+      if (!vid || !vid.duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+      vid.currentTime = percentage * vid.duration;
+    }
+
+    function attachCustomVideoProgress(videoId) {
+      const vid = document.getElementById(videoId);
+      const prog = document.getElementById(`prog_${videoId}`);
+      if (!vid || !prog) return;
+
+      vid.ontimeupdate = function() {
+        if (vid.duration) {
+          const pct = (vid.currentTime / vid.duration) * 100;
+          prog.style.width = pct + '%';
+        }
+      };
+    }
+
     function initProductVideo(vUrl) {
       try {
         let videoUrl = '';
@@ -2421,19 +2555,9 @@
           }
         }
 
-        // Direct Video (MP4 / WebM / Cloud URL)
-        container.innerHTML = `
-          <video 
-            src="${videoUrl}" 
-            controls 
-            playsinline 
-            autoplay 
-            loop 
-            preload="metadata" 
-            class="w-full h-full object-contain"
-            poster="https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800"
-          ></video>
-        `;
+        // Direct Video (MP4 / WebM / Cloud URL) -> Uses Luxury Custom Player
+        container.innerHTML = buildLuxuryVideoPlayer('showcaseCustomVideo', videoUrl, 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800', true, false);
+        attachCustomVideoProgress('showcaseCustomVideo');
       } catch (e) {
         console.warn('Video init error:', e);
       }
@@ -2634,16 +2758,8 @@
           ></iframe>
         `;
       } else {
-        host.innerHTML = `
-          <video 
-            src="${currentActiveVideoUrl}" 
-            autoplay 
-            loop 
-            controls 
-            playsinline 
-            class="w-full h-full object-contain"
-          ></video>
-        `;
+        host.innerHTML = buildLuxuryVideoPlayer('modalCustomVideo', currentActiveVideoUrl, '', true, false);
+        attachCustomVideoProgress('modalCustomVideo');
       }
 
       modal.classList.remove('hidden');
