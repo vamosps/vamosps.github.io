@@ -1129,6 +1129,13 @@
 
     function getStoreGalleryImages() {
       try {
+        const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
+        if (Array.isArray(storedProducts) && storedProducts.length > 0) {
+          const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
+          if (flagship && Array.isArray(flagship.gallery) && flagship.gallery.length > 0) {
+            return flagship.gallery;
+          }
+        }
         const stored = JSON.parse(localStorage.getItem('vamos_flagship_gallery') || 'null');
         if (Array.isArray(stored) && stored.length > 0) return stored;
         return DEFAULT_GALLERY_IMAGES;
@@ -1228,6 +1235,13 @@
 
     function getStoreColors() {
       try {
+        const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
+        if (Array.isArray(storedProducts) && storedProducts.length > 0) {
+          const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
+          if (flagship && Array.isArray(flagship.colors) && flagship.colors.length > 0) {
+            return flagship.colors;
+          }
+        }
         const stored = JSON.parse(localStorage.getItem('vamos_store_colors') || 'null');
         if (Array.isArray(stored) && stored.length > 0) return stored;
         return DEFAULT_COLORS;
