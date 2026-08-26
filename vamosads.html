@@ -271,6 +271,45 @@
           </button>
         </div>
 
+        <!-- App & Notifications Quick Management in Sidebar -->
+        <div class="pt-3 border-t border-zinc-800/80 space-y-1.5">
+          <span class="text-[10px] font-bold text-zinc-500 px-3 block tracking-wider uppercase">أدوات التطبيق والإشعارات</span>
+          
+          <button 
+            id="sidebarEnablePushBtn"
+            onclick="requestPushPermission()" 
+            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition text-right cursor-pointer"
+          >
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-bell-ring text-amber-400"></i>
+              <span class="font-bold">إشعارات الهاتف المباشرة</span>
+            </div>
+            <span class="text-[9px] bg-amber-500/20 px-2 py-0.5 rounded-md font-mono">🔔 تفعيل</span>
+          </button>
+
+          <button 
+            onclick="installPWAApp()" 
+            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 transition text-right cursor-pointer"
+          >
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-mobile-screen-button text-sky-400"></i>
+              <span class="font-bold">تثبيت التطبيق على الهاتف</span>
+            </div>
+            <span class="text-[9px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-mono">📲 PWA</span>
+          </button>
+
+          <button 
+            onclick="exportToExcel()" 
+            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 transition text-right cursor-pointer"
+          >
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-file-excel text-emerald-400"></i>
+              <span class="font-bold">تصدير الطلبات Excel</span>
+            </div>
+            <span class="text-[9px] bg-emerald-500/20 px-2 py-0.5 rounded-md font-mono">CSV</span>
+          </button>
+        </div>
+
         <!-- Quick Store Link -->
         <div class="pt-3 border-t border-zinc-800/80 space-y-1">
           <span class="text-[10px] font-bold text-zinc-500 px-3 block tracking-wider uppercase">المتجر</span>
@@ -306,12 +345,12 @@
     <!-- ========================================== -->
     <div class="lg:mr-64 flex flex-col min-h-screen">
       
-      <!-- Top Sticky Navbar Header -->
-      <header class="bg-zinc-950/90 border-b border-zinc-800/80 sticky top-0 z-30 backdrop-blur-md px-4 py-3">
-        <div class="flex items-center justify-between gap-3">
+      <!-- Top Sticky Navbar Header (Clean Luxury Mobile Layout) -->
+      <header class="bg-zinc-950/90 border-b border-zinc-800/80 sticky top-0 z-30 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3">
+        <div class="flex items-center justify-between gap-2">
           
           <!-- Hamburger Toggle + Active Page Title -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
             <button 
               onclick="toggleSidebar(true)" 
               class="lg:hidden w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-200 hover:text-white transition cursor-pointer shrink-0 shadow"
@@ -320,17 +359,27 @@
               <i class="fa-solid fa-bars text-sm"></i>
             </button>
             
-            <div>
-              <h1 id="pageHeaderTitle" class="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                <span>الملخص والإحصائيات</span>
+            <div class="min-w-0">
+              <h1 id="pageHeaderTitle" class="text-xs sm:text-base font-black text-white truncate">
+                الملخص والإحصائيات
               </h1>
-              <span id="liveClock" class="text-[10px] text-zinc-400 hidden sm:block"></span>
+              <span id="liveClock" class="text-[10px] text-zinc-400 hidden md:block"></span>
             </div>
           </div>
 
-          <!-- Top Action Buttons -->
-          <div class="flex items-center gap-2">
+          <!-- Top Action Buttons (Compact & Organized) -->
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
+            <!-- Refresh Button -->
+            <button 
+              onclick="refreshOrders()" 
+              class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-bold w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer shadow"
+              title="تحديث البيانات"
+            >
+              <i class="fa-solid fa-arrows-rotate text-xs text-emerald-400"></i>
+              <span class="hidden sm:inline">تحديث</span>
+            </button>
+
             <!-- Notification Bell Dropdown Wrapper -->
             <div class="relative">
               <button 
@@ -344,10 +393,10 @@
                 <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center border border-zinc-950 animate-pulse shadow">0</span>
               </button>
 
-              <!-- Dropdown Box (Fixed within screen boundaries) -->
+              <!-- Dropdown Box (Fixed within screen boundaries on mobile) -->
               <div 
                 id="notifDropdown" 
-                class="hidden absolute left-0 right-auto top-full mt-2 w-[300px] sm:w-[360px] max-w-[calc(100vw-32px)] bg-zinc-950 border border-zinc-700/80 rounded-2xl shadow-2xl backdrop-blur-xl z-50 overflow-hidden"
+                class="hidden fixed top-14 inset-x-3 sm:inset-x-auto sm:left-0 sm:right-auto sm:absolute sm:top-full mt-2 w-auto sm:w-[360px] max-w-[calc(100vw-24px)] bg-zinc-950 border border-zinc-700/80 rounded-2xl shadow-2xl backdrop-blur-xl z-[100] overflow-hidden"
               >
                 <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/60">
                   <div class="flex items-center gap-2">
@@ -379,60 +428,15 @@
               </div>
             </div>
 
-            <!-- Enable Native Push Notifications on Device Button -->
-            <button 
-              id="enablePushBtn"
-              type="button"
-              onclick="requestPushPermission()" 
-              class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 sm:px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow"
-              title="تفعيل الإشعارات الفورية على شاشة الهاتف"
-            >
-              <i class="fa-solid fa-bell-ring text-amber-400 text-xs animate-bounce"></i>
-              <span class="hidden sm:inline">إشعارات الهاتف</span>
-            </button>
-
-            <!-- Install PWA App Button -->
-            <button 
-              type="button"
-              onclick="installPWAApp()" 
-              class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs font-bold px-2.5 sm:px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow"
-              title="تثبيت لوحة التحكم كتطبيق على الهاتف"
-            >
-              <i class="fa-solid fa-mobile-screen-button text-sky-400 text-xs"></i>
-              <span class="hidden sm:inline">تثبيت التطبيق</span>
-            </button>
-
-            <!-- Refresh -->
-            <button 
-              onclick="refreshOrders()" 
-              class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow"
-              title="تحديث البيانات"
-            >
-              <i class="fa-solid fa-arrows-rotate text-[11px] text-emerald-400"></i>
-              <span class="hidden sm:inline">تحديث</span>
-            </button>
-
-            <!-- Export Excel Button -->
-            <button 
-              onclick="exportToExcel()" 
-              class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow"
-              title="تصدير بيانات الطلبات إلى Excel"
-            >
-              <i class="fa-solid fa-file-excel text-emerald-400"></i>
-              <span class="hidden sm:inline">تصدير Excel</span>
-            </button>
-
-            <!-- Quick Settings & Pixel Button -->
+            <!-- Settings Gear Button -->
             <button 
               onclick="switchView('settings')" 
-              class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow hover:border-emerald-500"
-              title="إعدادات بيكسلات الإعلانات والتطبيق"
+              class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-bold w-9 h-9 rounded-xl flex items-center justify-center transition cursor-pointer shadow"
+              title="الإعدادات والبيكسل"
             >
-              <i class="fa-solid fa-chart-line text-[11px] text-emerald-400"></i>
-              <span class="hidden md:inline">بيكسلات الإعلانات 🎯</span>
+              <i class="fa-solid fa-gear text-xs text-zinc-400"></i>
             </button>
           </div>
-
         </div>
       </header>
 
@@ -5630,7 +5634,7 @@
       if (activeToastTimeout) clearTimeout(activeToastTimeout);
       activeToastTimeout = setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('-translate-y-24', 'opacity-0');
+        toast.classList.add('-translate-y-36', 'opacity-0');
       }, 6000);
     }
 
@@ -5661,10 +5665,22 @@
 
     function updateNotificationButtonStatus() {
       const btn = document.getElementById('enablePushBtn');
-      if (!btn) return;
+      const sideBtn = document.getElementById('sidebarEnablePushBtn');
       if (window.Notification && Notification.permission === 'granted') {
-        btn.className = 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow';
-        btn.innerHTML = '<i class="fa-solid fa-bell-check text-emerald-400 text-xs"></i><span class="hidden sm:inline">الإشعارات مفعلة</span>';
+        if (btn) {
+          btn.className = 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow';
+          btn.innerHTML = '<i class="fa-solid fa-bell-check text-emerald-400 text-xs"></i><span class="hidden sm:inline">الإشعارات مفعلة</span>';
+        }
+        if (sideBtn) {
+          sideBtn.className = 'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 transition text-right cursor-pointer';
+          sideBtn.innerHTML = `
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-bell-check text-emerald-400"></i>
+              <span class="font-bold">إشعارات الهاتف المباشرة</span>
+            </div>
+            <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-mono">✅ مفعلة</span>
+          `;
+        }
       }
     }
 
@@ -5673,7 +5689,7 @@
         const id = currentToastOrderId;
         const toast = document.getElementById('liveOrderToast');
         toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('-translate-y-24', 'opacity-0');
+        toast.classList.add('-translate-y-36', 'opacity-0');
         openOrderDetailsModal(id);
       }
     }
@@ -5791,7 +5807,7 @@
   <!-- ========================================== -->
   <div 
     id="liveOrderToast" 
-    class="fixed top-4 left-4 z-50 transform -translate-y-28 opacity-0 transition-all duration-500 w-[calc(100vw-32px)] sm:w-96 bg-zinc-900/95 border border-emerald-500/50 rounded-2xl p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 text-xs pointer-events-auto"
+    class="fixed top-3.5 inset-x-3.5 sm:inset-x-auto sm:left-4 sm:right-auto sm:w-96 w-auto z-[9999] transform -translate-y-36 opacity-0 transition-all duration-500 bg-zinc-950/95 border border-emerald-500/50 rounded-2xl p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl flex items-center justify-between gap-3 text-xs pointer-events-auto"
   >
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 text-base">
