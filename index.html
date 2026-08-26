@@ -198,6 +198,21 @@
       </div>
     </section>
 
+    <!-- Product Video Showcase Card (Dynamically shown if videoUrl exists) -->
+    <section id="productVideoSection" class="hidden glass-card p-3 sm:p-4 rounded-2xl border border-zinc-800 space-y-2.5 shadow-xl">
+      <div class="flex items-center justify-between">
+        <span class="inline-flex items-center gap-1.5 text-xs font-bold text-white">
+          <i class="fa-solid fa-circle-play text-red-500 animate-pulse text-sm"></i>
+          <span id="t_video_title">فيديو استعراض الطقم الحقيقي على الواقع:</span>
+        </span>
+        <span class="text-[9px] bg-red-950/80 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full font-bold">100% تصوير حقيقي 🎬</span>
+      </div>
+
+      <div id="productVideoPlayerContainer" class="rounded-xl overflow-hidden bg-black aspect-video relative border border-zinc-700/60 shadow-inner flex items-center justify-center">
+        <!-- Injected dynamically by JS -->
+      </div>
+    </section>
+
     <!-- Trust Badges Grid -->
     <section class="grid grid-cols-3 gap-2 text-center">
       <div class="glass-card p-2.5 rounded-xl border border-zinc-800/80 space-y-1">
@@ -2107,9 +2122,73 @@
       }
     }
 
+    function initProductVideo() {
+      try {
+        const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
+        let videoUrl = '';
+        if (Array.isArray(storedProducts) && storedProducts.length > 0) {
+          const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
+          if (flagship && flagship.videoUrl) videoUrl = flagship.videoUrl.trim();
+        }
+        if (!videoUrl) {
+          videoUrl = localStorage.getItem('vamos_product_video_url') || '';
+        }
+
+        const sec = document.getElementById('productVideoSection');
+        const container = document.getElementById('productVideoPlayerContainer');
+        if (!sec || !container) return;
+
+        if (!videoUrl) {
+          sec.classList.add('hidden');
+          return;
+        }
+
+        sec.classList.remove('hidden');
+
+        // Check if YouTube
+        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+          let videoId = '';
+          if (videoUrl.includes('youtu.be/')) {
+            videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
+          } else if (videoUrl.includes('v=')) {
+            videoId = videoUrl.split('v=')[1].split('&')[0];
+          } else if (videoUrl.includes('embed/')) {
+            videoId = videoUrl.split('embed/')[1].split('?')[0];
+          }
+          if (videoId) {
+            container.innerHTML = `
+              <iframe 
+                src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1" 
+                class="w-full h-full" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+              ></iframe>
+            `;
+            return;
+          }
+        }
+
+        // Direct Video (MP4 / WebM / Cloud URL)
+        container.innerHTML = `
+          <video 
+            src="${videoUrl}" 
+            controls 
+            playsinline 
+            preload="metadata" 
+            class="w-full h-full object-contain"
+            poster="https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800"
+          ></video>
+        `;
+      } catch (e) {
+        console.warn('Video init error:', e);
+      }
+    }
+
     // Run on load: Auto-detect device language and apply
     setLanguage(currentLang);
     initProductGallery();
+    initProductVideo();
     initTrackingPixels();
 
     // Register Service Worker for PWA

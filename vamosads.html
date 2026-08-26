@@ -1579,6 +1579,35 @@
               </div>
             </div>
 
+            <!-- Product Video Showcase URL (فيديو استعراض المنتج) -->
+            <div class="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800/90 space-y-3">
+              <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                <div>
+                  <h4 class="font-bold text-zinc-200 text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-play text-red-500"></i>
+                    <span>فيديو استعراض المنتج الحقيقي (Product Video Showcase)</span>
+                  </h4>
+                  <span class="text-[10px] text-zinc-400">ضع رابط فيديو مباشر (MP4 أو YouTube أو Vimeo) لعرضه للزبائن في المتجر</span>
+                </div>
+                <span class="text-[9px] bg-red-950 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full font-bold">فيديو حقيقي 🎥</span>
+              </div>
+
+              <div class="space-y-2">
+                <input 
+                  type="text" 
+                  id="npVideoUrl" 
+                  placeholder="مثال: https://.../video.mp4 أو رابط YouTube" 
+                  class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 transition font-mono text-left"
+                  dir="ltr"
+                  oninput="updateProductVideoPreview(this.value)"
+                >
+                
+                <div id="productVideoPreviewContainer" class="hidden rounded-xl overflow-hidden border border-zinc-800 bg-black aspect-video max-w-md mx-auto relative">
+                  <!-- Video or iframe injected here -->
+                </div>
+              </div>
+            </div>
+
             <!-- Description -->
             <div class="space-y-1">
               <label class="font-bold text-zinc-300 block text-xs">وصف ومميزات المنتج</label>
@@ -4188,6 +4217,8 @@
       document.getElementById('npStock').value = product.stock || 'in_stock';
       document.getElementById('npImage').value = product.image || '';
       updateImagePreview(product.image || '', 'npImagePreview');
+      document.getElementById('npVideoUrl').value = product.videoUrl || '';
+      updateProductVideoPreview(product.videoUrl || '');
       document.getElementById('npDesc').value = product.desc || '';
 
       // Populate color variants
@@ -4225,6 +4256,29 @@
       }
     }
 
+    function updateProductVideoPreview(url) {
+      const container = document.getElementById('productVideoPreviewContainer');
+      if (!container) return;
+      if (!url || !url.trim()) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+      }
+      container.classList.remove('hidden');
+      const cleanUrl = url.trim();
+      if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+        let videoId = '';
+        if (cleanUrl.includes('youtu.be/')) videoId = cleanUrl.split('youtu.be/')[1].split('?')[0];
+        else if (cleanUrl.includes('v=')) videoId = cleanUrl.split('v=')[1].split('&')[0];
+        else if (cleanUrl.includes('embed/')) videoId = cleanUrl.split('embed/')[1].split('?')[0];
+        if (videoId) {
+          container.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>`;
+          return;
+        }
+      }
+      container.innerHTML = `<video src="${cleanUrl}" controls playsinline class="w-full h-full object-contain"></video>`;
+    }
+
     function setSampleImage(url) {
       document.getElementById('npImage').value = url;
       updateImagePreview(url, 'npImagePreview');
@@ -4236,6 +4290,7 @@
       const price = Number(document.getElementById('npPrice').value) || 110;
       const stock = document.getElementById('npStock').value;
       const image = document.getElementById('npImage').value.trim();
+      const videoUrl = document.getElementById('npVideoUrl')?.value.trim() || '';
       const desc = document.getElementById('npDesc').value.trim();
 
       // Collect Color Variants
@@ -4275,13 +4330,17 @@
           target.price = price;
           target.stock = stock;
           target.image = image;
+          target.videoUrl = videoUrl;
           target.desc = desc;
           target.colors = colorVariants.length > 0 ? colorVariants : [{ name: 'أسود فخم', hex: '#18181b', image }];
           target.gallery = gallery;
         }
         editingProductId = null;
         saveProducts(currentProducts);
-        showAppToast(`تم تحديث بيانات وصور وألوان المنتج "${title}" بنجاح! ✨`, 'success');
+        if (isFlagship) {
+          localStorage.setItem('vamos_product_video_url', videoUrl);
+        }
+        showAppToast(`تم تحديث بيانات وصور وفيديو المنتج "${title}" بنجاح! ✨`, 'success');
       } else {
         const newProd = {
           id: 'prod-' + Date.now(),
@@ -4289,6 +4348,7 @@
           price: price,
           stock: stock,
           image: image,
+          videoUrl: videoUrl,
           desc: desc || 'صنف مجوهرات فاخر جديد متاح للطلب',
           colors: colorVariants.length > 0 ? colorVariants : [{ name: 'أسود فخم', hex: '#18181b', image }],
           gallery: gallery,
@@ -4296,7 +4356,7 @@
         };
         currentProducts.push(newProd);
         saveProducts(currentProducts);
-        showAppToast(`تم حفظ وإضافة المنتج "${title}" مع صوره وخيارات ألوانه بنجاح! 💎`, 'success');
+        showAppToast(`تم حفظ وإضافة المنتج "${title}" مع صوره وفيديو الاستعراض بنجاح! 💎`, 'success');
       }
 
       // Sync Flagship Gallery & Store Colors to index.html via localStorage
