@@ -92,6 +92,18 @@
     video::-internal-media-controls-overflow-button {
       display: none !important;
     }
+
+    /* Protect all images & videos from right-click save, dragging, and iOS long-press */
+    img, video {
+      -webkit-touch-callout: none !important; /* Disables iOS Safari 'Save Image' popup */
+      -webkit-user-select: none !important;
+      -khtml-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-user-drag: none !important;
+      user-drag: none !important;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-28 relative">
@@ -2398,6 +2410,13 @@
             onclick="toggleCustomVideoPlay('${videoId}')"
           ></video>
 
+          <!-- Brand Watermark Logo Badge (شعار المتجر الفاخر) -->
+          <div class="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 bg-black/65 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-500/30 pointer-events-none shadow-lg select-none">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <span class="text-[10px] font-black tracking-widest text-white uppercase font-sans">VAMOS</span>
+            <span class="text-[8px] text-zinc-400 font-light tracking-wider uppercase font-sans">JEWELRY</span>
+          </div>
+
           <!-- Center Animated Indicator -->
           <button 
             type="button" 
@@ -2824,6 +2843,21 @@
         }, 5500);
       }
     }, 2200);
+
+    // Protection: Prevent right-click context menu and drag on all images and videos
+    document.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO' || e.target.closest('#mainImageContainer') || e.target.closest('#productVideoSection') || e.target.closest('#galleryThumbnailsContainer')) {
+        e.preventDefault();
+        return false;
+      }
+    }, { passive: false });
+
+    document.addEventListener('dragstart', (e) => {
+      if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO') {
+        e.preventDefault();
+        return false;
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>
