@@ -13,8 +13,8 @@
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 
   <!-- PWA & Mobile Web App Meta -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#059669">
+  <link rel="manifest" href="admin-manifest.json">
+  <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vamos Admin">
@@ -378,6 +378,29 @@
                 </div>
               </div>
             </div>
+
+            <!-- Enable Native Push Notifications on Device Button -->
+            <button 
+              id="enablePushBtn"
+              type="button"
+              onclick="requestPushPermission()" 
+              class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 sm:px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow"
+              title="تفعيل الإشعارات الفورية على شاشة الهاتف"
+            >
+              <i class="fa-solid fa-bell-ring text-amber-400 text-xs animate-bounce"></i>
+              <span class="hidden sm:inline">إشعارات الهاتف</span>
+            </button>
+
+            <!-- Install PWA App Button -->
+            <button 
+              type="button"
+              onclick="installPWAApp()" 
+              class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs font-bold px-2.5 sm:px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow"
+              title="تثبيت لوحة التحكم كتطبيق على الهاتف"
+            >
+              <i class="fa-solid fa-mobile-screen-button text-sky-400 text-xs"></i>
+              <span class="hidden sm:inline">تثبيت التطبيق</span>
+            </button>
 
             <!-- Refresh -->
             <button 
@@ -2323,6 +2346,7 @@
     async function initDashboard() {
       startLiveClock();
       loadPixelSettings();
+      updateNotificationButtonStatus();
       await fetchProductsFromSupabase();
       await refreshOrders();
       handleRouteFromHash();
@@ -5571,11 +5595,75 @@
 
       playNotificationSound();
 
+      // Trigger Native OS / Mobile Push Notification (Locksreen / Status Bar)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const custName = order.customerName || order.customer_name || 'عميل جديد';
+          const cityStr = order.city || 'الطلب جاهز';
+          const totalStr = order.totalCost || order.total_cost || '130 ₪';
+          const colorStr = order.color || 'أسود فخم';
+
+          if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.showNotification(`طلب شراء جديد! 💎 (${custName})`, {
+                body: `المدينة: ${cityStr} • اللون: ${colorStr} • المبلغ: ${totalStr}`,
+                icon: './logo.png',
+                badge: './logo.png',
+                vibrate: [300, 100, 300, 100, 300],
+                data: { url: `./vamosads.html#order-detail/${order.id}` },
+                tag: 'order-' + order.id
+              });
+            });
+          } else {
+            new Notification(`طلب شراء جديد! 💎 (${custName})`, {
+              body: `المدينة: ${cityStr} • اللون: ${colorStr} • المبلغ: ${totalStr}`,
+              icon: './logo.png'
+            });
+          }
+        } catch (e) {
+          console.warn('Native notification error:', e);
+        }
+      }
+
       if (activeToastTimeout) clearTimeout(activeToastTimeout);
       activeToastTimeout = setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
         toast.classList.add('-translate-y-24', 'opacity-0');
       }, 6000);
+    }
+
+    async function requestPushPermission() {
+      if (!('Notification' in window)) {
+        showAppToast('متصفحك لا يدعم الإشعارات المباشرة', 'warning');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        showAppToast('الإشعارات الفورية مفعلة بالفعل على هذا الجهاز! 🔔✅', 'success');
+        return;
+      }
+
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          playNotificationSound();
+          showAppToast('تم تفعيل استلام إشعارات الطلبات الفورية بنجاح! 🔔💎', 'success');
+          updateNotificationButtonStatus();
+        } else {
+          showAppToast('تم رفض إذن الإشعارات من إعدادات المتصفح.', 'warning');
+        }
+      } catch (err) {
+        console.warn('Permission request error:', err);
+      }
+    }
+
+    function updateNotificationButtonStatus() {
+      const btn = document.getElementById('enablePushBtn');
+      if (!btn) return;
+      if (window.Notification && Notification.permission === 'granted') {
+        btn.className = 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow';
+        btn.innerHTML = '<i class="fa-solid fa-bell-check text-emerald-400 text-xs"></i><span class="hidden sm:inline">الإشعارات مفعلة</span>';
+      }
     }
 
     function handleToastClick() {

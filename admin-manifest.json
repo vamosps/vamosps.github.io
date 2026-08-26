@@ -1,0 +1,55 @@
+{
+  "name": "Vamos Admin | تطبيق إدارة الطلبات والمتجر",
+  "short_name": "Vamos Admin",
+  "description": "تطبيق إدارة الطلبات، الإشعارات الفورية، فواتير الشحن، ونقطة البيع لمتجر Vamos JEWELRY",
+  "start_url": "./vamosads.html",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./logo.png",
+      "sizes": "512x512 192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./apple-touch-icon.png",
+      "sizes": "180x180 192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "إدارة الطلبات",
+      "short_name": "الطلبات",
+      "description": "عرض وتحديث حالة الطلبات الجديدة",
+      "url": "./vamosads.html#orders",
+      "icons": [{ "src": "./logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "نقطة البيع والكاشير",
+      "short_name": "POS",
+      "description": "تسجيل طلب يدوي فوري",
+      "url": "./vamosads.html#pos",
+      "icons": [{ "src": "./logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "إدارة المنتجات والألوان",
+      "short_name": "المنتجات",
+      "description": "تعديل الكتالوج والأسعار والألوان",
+      "url": "./vamosads.html#products",
+      "icons": [{ "src": "./logo.png", "sizes": "192x192" }]
+    }
+  ]
+}
