@@ -186,7 +186,7 @@
       <div>
         <span id="t_price_label" class="text-[10px] sm:text-[11px] text-zinc-400 block font-medium">سعر العرض الخاص بالطقم الواحد</span>
         <div class="flex items-baseline gap-2 mt-0.5">
-          <span class="text-2xl sm:text-3xl font-black text-white tracking-tight">110 ₪</span>
+          <span id="displaySinglePrice" class="text-2xl sm:text-3xl font-black text-white tracking-tight">110 ₪</span>
           <span class="text-xs sm:text-sm text-zinc-500 line-through font-semibold">180 ₪</span>
         </div>
       </div>
@@ -1116,28 +1116,28 @@
         id: 'img-1',
         title: 'طقم كابلز لاكوست (أسود فخم)',
         color: 'أسود فخم',
-        src: 'IMG_4030.jpg',
+        src: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800',
         fallback: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800'
       },
       {
         id: 'img-2',
         title: 'طقم لاكوست الملكي في البكج الأخضر الأصلي',
         color: 'أسود فخم',
-        src: 'IMG_3509.jpg',
+        src: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800',
         fallback: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800'
       },
       {
         id: 'img-3',
         title: 'طقم كابلز لاكوست (فضي ملكي)',
         color: 'فضي ملكي',
-        src: 'IMG_3511.jpg',
+        src: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=800',
         fallback: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=800'
       },
       {
         id: 'img-4',
         title: 'طقم كابلز لاكوست (ذهبي فاخر)',
         color: 'ذهبي فاخر',
-        src: 'IMG_3515.jpg',
+        src: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=800',
         fallback: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=800'
       }
     ];
@@ -1147,12 +1147,55 @@
         const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
         if (Array.isArray(storedProducts) && storedProducts.length > 0) {
           const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
-          if (flagship && Array.isArray(flagship.gallery) && flagship.gallery.length > 0) {
-            return flagship.gallery;
+          if (flagship) {
+            // 1. If explicit gallery array exists and has valid items
+            if (Array.isArray(flagship.gallery) && flagship.gallery.length > 0) {
+              const cleaned = flagship.gallery.map((g, idx) => ({
+                id: g.id || `dyn-gallery-${idx}`,
+                title: g.title || `${flagship.title} - ${g.color || ''}`,
+                color: g.color || '',
+                src: g.src || g.image || flagship.image || '',
+                fallback: g.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
+              })).filter(g => Boolean(g.src));
+              if (cleaned.length > 0) return cleaned;
+            }
+
+            // 2. Build dynamically from colors and primary image
+            const dynamicGallery = [];
+            if (Array.isArray(flagship.colors) && flagship.colors.length > 0) {
+              flagship.colors.forEach((c, idx) => {
+                const cImg = (typeof c === 'object' && c) ? (c.image || c.src) : '';
+                if (cImg) {
+                  dynamicGallery.push({
+                    id: `dyn-col-${idx}`,
+                    title: `${flagship.title} (${c.name || ''})`,
+                    color: c.name || '',
+                    src: cImg,
+                    fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
+                  });
+                }
+              });
+            }
+
+            // If main flagship image exists and not yet in list
+            if (flagship.image && !dynamicGallery.some(img => img.src === flagship.image)) {
+              dynamicGallery.unshift({
+                id: 'dyn-main-img',
+                title: flagship.title,
+                color: (flagship.colors && flagship.colors[0]?.name) || '',
+                src: flagship.image,
+                fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
+              });
+            }
+
+            if (dynamicGallery.length > 0) return dynamicGallery;
           }
         }
         const stored = JSON.parse(localStorage.getItem('vamos_flagship_gallery') || 'null');
-        if (Array.isArray(stored) && stored.length > 0) return stored;
+        if (Array.isArray(stored) && stored.length > 0) {
+          const cleanedStored = stored.filter(g => Boolean(g.src));
+          if (cleanedStored.length > 0) return cleanedStored;
+        }
         return DEFAULT_GALLERY_IMAGES;
       } catch (e) {
         return DEFAULT_GALLERY_IMAGES;
@@ -1160,7 +1203,7 @@
     }
 
     let currentGalleryIndex = 0;
-    const singleItemPrice = 110;
+    let singleItemPrice = 110;
     let quantity = 1;
     let currentDeliveryCost = 20;
     let currentDeliveryName = 'الضفة الغربية';
@@ -1243,9 +1286,9 @@
 
     // Colors & Swatches Synchronization
     const DEFAULT_COLORS = [
-      { name: 'أسود فخم', hex: '#18181b', image: 'IMG_4030.jpg' },
-      { name: 'فضي ملكي', hex: '#cbd5e1', image: 'IMG_3511.jpg' },
-      { name: 'ذهبي فاخر', hex: '#fbbf24', image: 'IMG_3515.jpg' }
+      { name: 'أسود فخم', hex: '#18181b', image: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800' },
+      { name: 'فضي ملكي', hex: '#cbd5e1', image: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=800' },
+      { name: 'ذهبي فاخر', hex: '#fbbf24', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=800' }
     ];
 
     function getStoreColors() {
@@ -2185,6 +2228,48 @@
       }
     }
 
+    function applyProductDataToStore(flagship) {
+      if (!flagship) return;
+      const mappedProduct = {
+        id: flagship.id || 'prod-lacoste-set',
+        title: flagship.title || 'طقم أساور كابلز لاكوست',
+        price: Number(flagship.price) || 110,
+        stock: flagship.stock,
+        image: flagship.image || '',
+        videoUrl: flagship.video_url || '',
+        desc: flagship.description || flagship.desc || '',
+        colors: Array.isArray(flagship.colors) ? flagship.colors : [],
+        gallery: Array.isArray(flagship.gallery) ? flagship.gallery : [],
+        isFlagship: true
+      };
+
+      localStorage.setItem('vamos_store_products', JSON.stringify([mappedProduct]));
+      if (mappedProduct.videoUrl) {
+        localStorage.setItem('vamos_product_video_url', mappedProduct.videoUrl);
+      }
+
+      // Update UI title and description if current language is Arabic (or custom)
+      if (mappedProduct.title && currentLang === 'ar') {
+        const titleEl = document.getElementById('t_title');
+        if (titleEl) titleEl.innerText = mappedProduct.title;
+      }
+      if (mappedProduct.desc && currentLang === 'ar') {
+        const subEl = document.getElementById('t_subtitle');
+        if (subEl) subEl.innerText = mappedProduct.desc;
+      }
+      if (mappedProduct.price) {
+        singleItemPrice = mappedProduct.price;
+        const priceEl = document.getElementById('displaySinglePrice');
+        if (priceEl) priceEl.innerText = `${singleItemPrice} ₪`;
+      }
+
+      initProductGallery();
+      initColorPickerButtons();
+      initProductVideo();
+      updateCalculation();
+      console.log('⚡ Live flagship product synchronized from Supabase Cloud:', mappedProduct.title);
+    }
+
     async function fetchLiveProductFromSupabase() {
       if (!supabaseClient) return;
       try {
@@ -2196,32 +2281,30 @@
         if (!error && Array.isArray(data) && data.length > 0) {
           const flagship = data.find(p => p.id === 'prod-lacoste-set' || p.is_flagship) || data[0];
           if (flagship) {
-            const mappedProduct = {
-              id: flagship.id,
-              title: flagship.title,
-              price: Number(flagship.price) || 110,
-              stock: flagship.stock,
-              image: flagship.image,
-              videoUrl: flagship.video_url || '',
-              desc: flagship.description,
-              colors: Array.isArray(flagship.colors) ? flagship.colors : [],
-              gallery: Array.isArray(flagship.gallery) ? flagship.gallery : [],
-              isFlagship: true
-            };
-
-            localStorage.setItem('vamos_store_products', JSON.stringify([mappedProduct]));
-            if (mappedProduct.videoUrl) {
-              localStorage.setItem('vamos_product_video_url', mappedProduct.videoUrl);
-            }
-
-            initProductGallery();
-            initColorPickerButtons();
-            initProductVideo();
-            console.log('⚡ Live flagship product synchronized from Supabase Cloud:', mappedProduct.title);
+            applyProductDataToStore(flagship);
           }
         }
       } catch (err) {
         console.log('Supabase product fetch fallback:', err);
+      }
+    }
+
+    function initStoreSupabaseRealtime() {
+      if (!supabaseClient) return;
+      try {
+        supabaseClient
+          .channel('public:products_live_store')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
+            console.log('⚡ Realtime Supabase product change received on store:', payload);
+            if (payload && payload.new) {
+              applyProductDataToStore(payload.new);
+            } else {
+              fetchLiveProductFromSupabase();
+            }
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn('Store realtime subscribe error:', e);
       }
     }
 
@@ -2231,6 +2314,7 @@
     initProductVideo();
     initTrackingPixels();
     fetchLiveProductFromSupabase();
+    initStoreSupabaseRealtime();
 
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {

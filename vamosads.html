@@ -3744,12 +3744,61 @@
 
     const IMGBB_API_KEY = '7467118c041ef4b30f4850ee83e02b3e';
 
+    // Client-side image compression to guarantee ultra-fast mobile upload & prevent localStorage quota errors
+    function compressImageFile(file, maxWidth = 1200, quality = 0.85) {
+      return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+          return resolve({ blob: file, dataUrl: '', name: file?.name || 'img.jpg' });
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth || height > maxWidth) {
+              if (width > height) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+              } else {
+                width = Math.round((width * maxWidth) / height);
+                height = maxWidth;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              const dataUrl = canvas.toDataURL('image/jpeg', quality);
+              if (blob) {
+                resolve({ blob: blob, dataUrl: dataUrl, name: (file.name || 'image').replace(/\.[^/.]+$/, "") + ".jpg" });
+              } else {
+                resolve({ blob: file, dataUrl: dataUrl || e.target.result, name: file.name });
+              }
+            }, 'image/jpeg', quality);
+          };
+          img.onerror = () => {
+            resolve({ blob: file, dataUrl: e.target.result, name: file.name });
+          };
+          img.src = e.target.result;
+        };
+        reader.onerror = () => resolve({ blob: file, dataUrl: '', name: file.name });
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function uploadImageToImgBB(file, onDone) {
       if (!file) return;
-      showAppToast('جاري رفع صورتك سحابياً إلى سيرفر ImgBB... ⚡', 'info', 4000);
+      showAppToast('جاري ضغط ورفع صورتك سحابياً... ⚡', 'info', 4000);
+      let comp = null;
       try {
+        comp = await compressImageFile(file, 1200, 0.85);
+        const uploadBlob = comp.blob || file;
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('image', uploadBlob, comp.name || 'product.jpg');
 
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
           method: 'POST',
@@ -3767,13 +3816,19 @@
           throw new Error(json?.error?.message || 'خطأ في استجابة ImgBB');
         }
       } catch (err) {
-        console.warn('ImgBB upload error, fallback to FileReader:', err);
-        const r = new FileReader();
-        r.onload = function(e) {
-          if (onDone) onDone(e.target.result);
-        };
-        r.readAsDataURL(file);
-        showAppToast('تم حفظ الصورة بنجاح! 📸', 'success');
+        console.warn('ImgBB upload error, using compressed DataURL fallback:', err);
+        const fallbackUrl = comp?.dataUrl;
+        if (fallbackUrl) {
+          if (onDone) onDone(fallbackUrl);
+          showAppToast('تم حفظ الصورة المضغوطة بنجاح! 📸', 'success');
+        } else {
+          const r = new FileReader();
+          r.onload = function(e) {
+            if (onDone) onDone(e.target.result);
+          };
+          r.readAsDataURL(file);
+          showAppToast('تم حفظ الصورة بنجاح! 📸', 'success');
+        }
       }
     }
 
@@ -4389,8 +4444,8 @@
           });
         });
 
-        if (flagshipGallery.length === 0) {
-          flagshipGallery.push({ id: 'img-main', title, color: 'أسود فخم', src: image, fallback: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800' });
+        if (flagshipGallery.length === 0 && image) {
+          flagshipGallery.push({ id: 'img-main', title, color: colorVariants[0]?.name || 'أسود فخم', src: image, fallback: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800' });
         }
 
         localStorage.setItem('vamos_flagship_gallery', JSON.stringify(flagshipGallery));
@@ -4404,6 +4459,10 @@
             : currentProducts[currentProducts.length - 1];
 
           if (productToSync) {
+            const syncGallery = (flagshipGallery && flagshipGallery.length > 0)
+              ? flagshipGallery
+              : ((productToSync.gallery && productToSync.gallery.length > 0) ? productToSync.gallery : [{ id: 'img-main', title: productToSync.title, src: productToSync.image, color: '' }]);
+
             supabaseClient.from('products').upsert([{
               id: productToSync.id || 'prod-lacoste-set',
               title: productToSync.title,
@@ -4413,7 +4472,7 @@
               video_url: productToSync.videoUrl || '',
               description: productToSync.desc || '',
               colors: productToSync.colors || [],
-              gallery: productToSync.gallery || [],
+              gallery: syncGallery,
               is_flagship: isFlagship || productToSync.isFlagship || false,
               updated_at: new Date().toISOString()
             }]).then(({ error }) => {
