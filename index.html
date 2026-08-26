@@ -2534,14 +2534,19 @@
 
     function initFloatingMiniVideo(vUrl) {
       let videoUrl = '';
-      if (typeof vUrl === 'string') {
+      if (typeof vUrl === 'string' && vUrl.trim()) {
         videoUrl = vUrl.trim();
       } else {
         const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
         if (Array.isArray(storedProducts) && storedProducts.length > 0) {
           const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
-          if (flagship && flagship.videoUrl) {
-            videoUrl = flagship.videoUrl.trim();
+          if (flagship) {
+            if (flagship.videoUrl) {
+              videoUrl = flagship.videoUrl.trim();
+            } else if (Array.isArray(flagship.gallery)) {
+              const vidItem = flagship.gallery.find(g => g.type === 'video' || Boolean(g.videoUrl));
+              if (vidItem) videoUrl = (vidItem.videoUrl || vidItem.src || '').trim();
+            }
           }
         }
       }
