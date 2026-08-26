@@ -1,8 +1,12 @@
-const CACHE_NAME = 'vamos-jewelry-cache-v3';
+const CACHE_NAME = 'vamos-jewelry-cache-v4';
 const ASSETS_TO_CACHE = [
   './index.html',
   './vamosads.html',
-  './manifest.json'
+  './manifest.json',
+  './favicon.svg',
+  './logo.png',
+  './favicon.png',
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
