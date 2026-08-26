@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vamos-jewelry-cache-v2';
+const CACHE_NAME = 'vamos-jewelry-cache-v3';
 const ASSETS_TO_CACHE = [
   './index.html',
   './vamosads.html',
@@ -24,12 +24,12 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = event.request.url;
 
-  // Never cache Supabase, ImgBB or dynamic APIs
-  if (url.includes('supabase.co') || url.includes('imgbb.com') || url.includes('cdn.jsdelivr.net') || url.includes('googleapis.com')) {
+  // Never cache live realtime Supabase mutations, ImgBB uploads or dynamic tracking APIs
+  if (url.includes('supabase.co') || url.includes('imgbb.com') || url.includes('snapchat.com') || url.includes('google-analytics.com')) {
     return;
   }
 
-  // For HTML documents: Network First, fallback to cache
+  // For HTML documents: Network First with ultra-fast cache fallback
   if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(event.request)
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For other static assets: Stale while revalidate
+  // For fonts, icons, styles and images: Stale-While-Revalidate for instant render
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {

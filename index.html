@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>طقم كابلز لاكوست الملكي - Vamos JEWELRY</title>
   
+  <!-- High-Speed Resource Preconnects & DNS Prefetching -->
+  <link rel="preconnect" href="https://toybaeoutpeyvzxmlsug.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://toybaeoutpeyvzxmlsug.supabase.co">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+
   <!-- PWA & Mobile Web App Meta -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#059669">
@@ -163,7 +174,10 @@
           src="https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800" 
           onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800';"
           alt="طقم أساور كابلز لاكوست - Vamos" 
-          class="w-full h-80 sm:h-96 object-contain p-1 transition-all duration-300 transform group-hover:scale-102"
+          fetchpriority="high"
+          decoding="async"
+          draggable="false"
+          class="w-full h-80 sm:h-96 object-contain p-1 transition-all duration-300 transform group-hover:scale-102 select-none"
         >
 
         <!-- Main Video Container (shown when active item is a video) -->
@@ -2710,17 +2724,15 @@
     async function fetchLiveProductFromSupabase() {
       if (!supabaseClient) return;
       try {
+        // Fast targeted fetch: gets single flagship record instantly
         const { data, error } = await supabaseClient
           .from('products')
-          .select('*')
+          .select('id, title, price, stock, image, video_url, description, colors, gallery, is_flagship, updated_at')
           .order('updated_at', { ascending: false })
-          .limit(10);
+          .limit(1);
 
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const flagship = data.find(p => p.id === 'prod-lacoste-set' || p.is_flagship) || data[0];
-          if (flagship) {
-            applyProductDataToStore(flagship);
-          }
+        if (!error && Array.isArray(data) && data.length > 0 && data[0]) {
+          applyProductDataToStore(data[0]);
         }
       } catch (err) {
         console.log('Supabase product fetch fallback:', err);
