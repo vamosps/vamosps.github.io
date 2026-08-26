@@ -2185,11 +2185,52 @@
       }
     }
 
+    async function fetchLiveProductFromSupabase() {
+      if (!supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('products')
+          .select('*')
+          .limit(10);
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          const flagship = data.find(p => p.id === 'prod-lacoste-set' || p.is_flagship) || data[0];
+          if (flagship) {
+            const mappedProduct = {
+              id: flagship.id,
+              title: flagship.title,
+              price: Number(flagship.price) || 110,
+              stock: flagship.stock,
+              image: flagship.image,
+              videoUrl: flagship.video_url || '',
+              desc: flagship.description,
+              colors: Array.isArray(flagship.colors) ? flagship.colors : [],
+              gallery: Array.isArray(flagship.gallery) ? flagship.gallery : [],
+              isFlagship: true
+            };
+
+            localStorage.setItem('vamos_store_products', JSON.stringify([mappedProduct]));
+            if (mappedProduct.videoUrl) {
+              localStorage.setItem('vamos_product_video_url', mappedProduct.videoUrl);
+            }
+
+            initProductGallery();
+            initColorPickerButtons();
+            initProductVideo();
+            console.log('⚡ Live flagship product synchronized from Supabase Cloud:', mappedProduct.title);
+          }
+        }
+      } catch (err) {
+        console.log('Supabase product fetch fallback:', err);
+      }
+    }
+
     // Run on load: Auto-detect device language and apply
     setLanguage(currentLang);
     initProductGallery();
     initProductVideo();
     initTrackingPixels();
+    fetchLiveProductFromSupabase();
 
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
