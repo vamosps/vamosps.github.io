@@ -2024,6 +2024,9 @@
           quantity: quantity,
           color: color
         });
+
+        // 4. Send Instant Telegram Bot Push Notification (Wakes phone lockscreen 24/7)
+        sendTelegramOrderNotification(newOrder);
       } catch (err) {
         console.error('Order save error:', err);
       }
@@ -2526,6 +2529,57 @@
         console.log(`🎯 Purchase tracking dispatched (Reported Value: ${shouldSendValue ? reportedValue + ' ILS' : 'No Value'}) for order:`, orderData.orderId);
       } catch (err) {
         console.warn('Tracking event error:', err);
+      }
+    }
+
+    // ========================================================
+    // Telegram Bot Instant Order Push Dispatcher (24/7 Lockscreen Alerts)
+    // ========================================================
+    async function sendTelegramOrderNotification(order) {
+      const botToken = '8800801128:AAG2n2EWDrVNWvdHSqw7UO32MUawuAf62RQ';
+      const chatIds = ['6640487162', '5162238761'];
+
+      const msg = `💎 <b>طلب جديد من Vamos JEWELRY!</b> 🚨\n\n` +
+        `🔖 <b>رقم الطلب:</b> <code>#${order.id}</code>\n` +
+        `👤 <b>العميل:</b> <b>${order.customerName}</b>\n` +
+        `📞 <b>الهاتف:</b> <code>${order.phone}</code>` + (order.altPhone ? `\n📱 <b>هاتف إضافي:</b> <code>${order.altPhone}</code>` : '') + `\n` +
+        `📍 <b>المنطقة:</b> ${order.zone} (+${order.deliveryCost} ₪)\n` +
+        `🏙 <b>المدينة/العنوان:</b> ${order.city} — ${order.town}\n` +
+        (order.driverNotes ? `📝 <b>ملاحظة الشوفير:</b> <i>${order.driverNotes}</i>\n` : '') +
+        `🎨 <b>اللون:</b> <b>${order.color}</b>\n` +
+        `📦 <b>الكمية:</b> <b>${order.quantity} طقم</b>\n` +
+        `💰 <b>المبلغ المطلوب تحصيله كاش:</b> <b>${order.totalCost}</b>\n` +
+        (order.notes ? `💬 <b>ملاحظات:</b> ${order.notes}\n` : '') +
+        `\n⏰ <b>التاريخ:</b> ${new Date().toLocaleString('ar-EG')}`;
+
+      const cleanPhone = String(order.phone).startsWith('0') ? String(order.phone).substring(1) : String(order.phone);
+      const waLink = `https://wa.me/972${cleanPhone}`;
+      const dashboardLink = `https://vamosps.github.io/vamosads.html`;
+
+      const keyboard = {
+        inline_keyboard: [
+          [
+            { text: "💬 مراسلة الزبون واتساب", url: waLink },
+            { text: "📋 فتح لوحة التحكم", url: dashboardLink }
+          ]
+        ]
+      };
+
+      for (const chatId of chatIds) {
+        try {
+          fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: msg,
+              parse_mode: 'HTML',
+              reply_markup: keyboard
+            })
+          }).catch(e => console.warn('Telegram push warning:', e));
+        } catch (e) {
+          console.warn('Telegram dispatch error:', e);
+        }
       }
     }
 
