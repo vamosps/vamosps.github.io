@@ -2016,9 +2016,12 @@
         existingOrders.unshift(newOrder);
         localStorage.setItem('vamos_orders', JSON.stringify(existingOrders));
 
-        // 3. Fire Pixel Conversion (Meta, TikTok, Snapchat, GA4)
+        // 3. Fire Pixel Conversion (Meta CAPI, TikTok, Snapchat, GA4)
         fireTrackingPurchaseEvent({
           orderId: orderId,
+          customerName: name,
+          phone: phone,
+          city: city,
           value: (singleItemPrice * quantity) + currentDeliveryCost,
           price: singleItemPrice,
           quantity: quantity,
@@ -2481,10 +2484,21 @@
           basePayload.value = reportedValue;
         }
 
-        // Meta Pixel
+        // Meta Pixel Browser Event (with eventID for server deduplication)
         if (window.fbq) {
-          fbq('track', 'Purchase', basePayload);
+          fbq('track', 'Purchase', basePayload, { eventID: orderData.orderId });
         }
+
+        // Meta Conversions API (Direct Server-Side Event with 10.0 Match Quality)
+        sendMetaConversionsApiEvent({
+          orderId: orderData.orderId,
+          customerName: orderData.customerName,
+          phone: orderData.phone,
+          city: orderData.city,
+          reportedValue: shouldSendValue ? reportedValue : 1.00,
+          quantity: orderData.quantity
+        });
+
         // TikTok Pixel
         if (window.ttq) {
           const ttPayload = {
@@ -2529,6 +2543,74 @@
         console.log(`🎯 Purchase tracking dispatched (Reported Value: ${shouldSendValue ? reportedValue + ' ILS' : 'No Value'}) for order:`, orderData.orderId);
       } catch (err) {
         console.warn('Tracking event error:', err);
+      }
+    }
+
+    async function hashMetaField(str) {
+      if (!str) return null;
+      const clean = String(str).trim().toLowerCase();
+      if (!clean) return null;
+      try {
+        const msgBuffer = new TextEncoder().encode(clean);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function sendMetaConversionsApiEvent(orderData) {
+      const pixelId = '952018047922081';
+      const accessToken = 'EAAPKxCHZCsaQBScgalkEuesvSqyq7VLwOpZBbG2KNCR3eL5vMVi5EqoKnnuxSxROzrw3hchA7FXPqxL0YJ2LIPzZBuho1uq1kWIHSoztUu6Fk4SOorZArmRRIlV3cZCVzxosYZBNGKJCZApQHSFs5dkhcCkHdTOdCb3AJgQnXP89OZBc6cSXZBaZAgZB8zbOcEWVwZDZD';
+
+      try {
+        const rawPhone = String(orderData.phone || '').replace(/\D/g, '');
+        const normPhone = rawPhone.startsWith('0') ? '972' + rawPhone.substring(1) : (rawPhone.startsWith('972') ? rawPhone : '972' + rawPhone);
+        
+        const hashedPhone = await hashMetaField(normPhone);
+        const hashedName = await hashMetaField(orderData.customerName);
+        const hashedCity = await hashMetaField(orderData.city);
+        const hashedCountry = await hashMetaField('ps');
+
+        const userData = {};
+        if (hashedPhone) userData.ph = [hashedPhone];
+        if (hashedName) userData.fn = [hashedName];
+        if (hashedCity) userData.ct = [hashedCity];
+        if (hashedCountry) userData.country = [hashedCountry];
+        userData.client_user_agent = navigator.userAgent;
+
+        const capiPayload = {
+          data: [
+            {
+              event_name: 'Purchase',
+              event_time: Math.floor(Date.now() / 1000),
+              event_id: orderData.orderId,
+              event_source_url: window.location.href,
+              action_source: 'website',
+              user_data: userData,
+              custom_data: {
+                currency: 'ILS',
+                value: orderData.reportedValue || 1.00,
+                content_name: 'طقم أساور كابلز لاكوست',
+                content_type: 'product',
+                content_ids: ['lacoste-couples-set'],
+                num_items: orderData.quantity || 1
+              }
+            }
+          ]
+        };
+
+        fetch(`https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(capiPayload)
+        })
+        .then(r => r.json())
+        .then(res => console.log('⚡ Meta Conversions API (CAPI) Success:', res))
+        .catch(err => console.warn('Meta CAPI Error:', err));
+      } catch (err) {
+        console.warn('Meta CAPI Dispatch Error:', err);
       }
     }
 
