@@ -3406,9 +3406,28 @@
 
       let html = '';
       filtered.forEach(prod => {
-        const colors = prod.colors && prod.colors.length > 0 ? prod.colors : ['أسود فخم', 'فضي ملكي', 'ذهبي فاخر'];
+        const rawColors = (prod.colors && Array.isArray(prod.colors) && prod.colors.length > 0) 
+          ? prod.colors 
+          : ['أسود فخم', 'فضي ملكي', 'ذهبي فاخر'];
+
+        const colors = rawColors.map(c => {
+          if (typeof c === 'object' && c !== null) {
+            return {
+              name: String(c.name || 'أسود فخم').trim(),
+              hex: c.hex || '#18181b',
+              image: c.image || prod.image || ''
+            };
+          }
+          const str = String(c || 'أسود فخم').trim();
+          return {
+            name: str,
+            hex: str.includes('فض') ? '#cbd5e1' : (str.includes('ذهب') ? '#fbbf24' : '#18181b'),
+            image: prod.image || ''
+          };
+        });
+
         if (!selectedProductColors[prod.id]) {
-          selectedProductColors[prod.id] = colors[0];
+          selectedProductColors[prod.id] = colors[0].name;
         }
         const activeColor = selectedProductColors[prod.id];
 
@@ -3435,12 +3454,12 @@
                   ${colors.map(c => `
                     <button 
                       type="button" 
-                      onclick="selectCardColor('${prod.id}', '${c}')"
-                      class="card-color-btn text-[10px] px-2 py-0.5 rounded-md border ${c === activeColor ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'} transition cursor-pointer"
+                      onclick="selectCardColor('${prod.id}', '${c.name.replace(/'/g, "\\'")}')"
+                      class="card-color-btn text-[10px] px-2 py-0.5 rounded-md border ${c.name === activeColor ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'} transition cursor-pointer"
                       data-prod-id="${prod.id}"
-                      data-color="${c}"
+                      data-color="${c.name}"
                     >
-                      ${c}
+                      ${c.name}
                     </button>
                   `).join('')}
                 </div>
@@ -3480,7 +3499,20 @@
       const prod = products.find(p => String(p.id) === String(prodId));
       if (!prod) return;
 
-      const chosenColor = selectedProductColors[prodId] || (prod.colors && prod.colors[0]) || 'أسود فخم';
+      const firstColorName = (prod.colors && prod.colors[0]) 
+        ? (typeof prod.colors[0] === 'object' ? prod.colors[0].name : prod.colors[0]) 
+        : 'أسود فخم';
+
+      const chosenColor = String(selectedProductColors[prodId] || firstColorName || 'أسود فخم').trim();
+
+      // Find color image if available
+      let itemImage = prod.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400';
+      if (prod.colors && Array.isArray(prod.colors)) {
+        const foundCol = prod.colors.find(c => (typeof c === 'object' ? c.name : c) === chosenColor);
+        if (foundCol && typeof foundCol === 'object' && foundCol.image) {
+          itemImage = foundCol.image;
+        }
+      }
 
       // Check if item with same prodId and color already exists in cart
       const existing = posCart.find(item => item.productId === prod.id && item.color === chosenColor);
@@ -3492,7 +3524,7 @@
           productId: prod.id,
           title: prod.title,
           price: Number(prod.price) || 110,
-          image: prod.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400',
+          image: itemImage,
           color: chosenColor,
           qty: 1
         });
