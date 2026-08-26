@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vamos-jewelry-cache-v5';
+const CACHE_NAME = 'vamos-jewelry-cache-v6';
 const ASSETS_TO_CACHE = [
   './index.html',
   './vamosads.html',
@@ -29,8 +29,8 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = event.request.url;
 
-  // Never cache live realtime Supabase mutations, ImgBB uploads or dynamic tracking APIs
-  if (url.includes('supabase.co') || url.includes('imgbb.com') || url.includes('snapchat.com') || url.includes('google-analytics.com')) {
+  // Never cache live realtime Supabase mutations, Telegram API, ImgBB uploads or dynamic tracking APIs
+  if (url.includes('supabase.co') || url.includes('telegram.org') || url.includes('imgbb.com') || url.includes('snapchat.com') || url.includes('google-analytics.com')) {
     return;
   }
 
