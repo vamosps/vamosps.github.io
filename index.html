@@ -1416,7 +1416,7 @@
           if (videoId) {
             videoContainer.innerHTML = `
               <iframe 
-                src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
+                src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1" 
                 class="w-full h-full" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -1431,6 +1431,7 @@
               controls 
               playsinline 
               autoplay 
+              loop
               poster="${mediaData.poster || mediaData.src || ''}" 
               class="w-full h-full object-contain"
             ></video>
@@ -2409,7 +2410,7 @@
           if (videoId) {
             container.innerHTML = `
               <iframe 
-                src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1" 
+                src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1" 
                 class="w-full h-full" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -2426,6 +2427,8 @@
             src="${videoUrl}" 
             controls 
             playsinline 
+            autoplay 
+            loop 
             preload="metadata" 
             class="w-full h-full object-contain"
             poster="https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800"
@@ -2623,10 +2626,10 @@
         else if (currentActiveVideoUrl.includes('embed/')) videoId = currentActiveVideoUrl.split('embed/')[1].split('?')[0];
         host.innerHTML = `
           <iframe 
-            src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1" 
+            src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=1&rel=0&modestbranding=1" 
             class="w-full h-full" 
             frameborder="0" 
-            allow="autoplay; encrypted-media; picture-in-picture"
+            allow="autoplay; encrypted-media; picture-in-picture" 
             allowfullscreen
           ></iframe>
         `;
@@ -2635,6 +2638,7 @@
           <video 
             src="${currentActiveVideoUrl}" 
             autoplay 
+            loop 
             controls 
             playsinline 
             class="w-full h-full object-contain"

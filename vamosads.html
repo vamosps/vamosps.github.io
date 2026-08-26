@@ -1636,14 +1636,21 @@
               </div>
 
               <div class="space-y-2">
-                <input 
-                  type="text" 
-                  id="npVideoUrl" 
-                  placeholder="مثال: https://.../video.mp4 أو رابط YouTube" 
-                  class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 transition font-mono text-left"
-                  dir="ltr"
-                  oninput="updateProductVideoPreview(this.value)"
-                >
+                <div class="flex items-center gap-2 flex-wrap">
+                  <input 
+                    type="text" 
+                    id="npVideoUrl" 
+                    placeholder="مثال: رابط YouTube أو رابط فيديو MP4 مباشر" 
+                    class="flex-1 min-w-[200px] bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 transition font-mono text-left"
+                    dir="ltr"
+                    oninput="updateProductVideoPreview(this.value)"
+                  >
+                  <label class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-[11px] px-3.5 py-2.5 rounded-xl cursor-pointer transition flex items-center gap-1.5 shadow active:scale-95 shrink-0" title="اختر ملف فيديو من هاتفك أو جهازك">
+                    <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                    <span>رفع فيديو من الجهاز 🎬</span>
+                    <input type="file" accept="video/*" class="hidden" onchange="handleDirectVideoUpload(this, 'npVideoUrl')">
+                  </label>
+                </div>
                 
                 <div id="productVideoPreviewContainer" class="hidden rounded-xl overflow-hidden border border-zinc-800 bg-black aspect-video max-w-md mx-auto relative">
                   <!-- Video or iframe injected here -->
@@ -4154,13 +4161,20 @@
 
           <!-- VIDEO FIELDS -->
           <div id="videoFields_${rowId}" class="${isVideo ? '' : 'hidden'} flex-1 min-w-[200px] space-y-1.5">
-            <input 
-              type="text" 
-              placeholder="رابط الفيديو (مثال: YouTube أو رابط MP4 مباشر أو Vimeo)"
-              value="${videoUrl || (isVideo ? src : '')}"
-              class="gallery-video-url-input w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 font-mono text-left"
-              dir="ltr"
-            >
+            <div class="flex items-center gap-2 flex-wrap">
+              <input 
+                type="text" 
+                placeholder="رابط الفيديو (مثال: YouTube أو رابط MP4 مباشر أو Vimeo)"
+                value="${videoUrl || (isVideo ? src : '')}"
+                class="gallery-video-url-input flex-1 min-w-[180px] bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 font-mono text-left"
+                dir="ltr"
+              >
+              <label class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg cursor-pointer transition flex items-center gap-1 shrink-0 shadow" title="اختر ملف فيديو من جهازك">
+                <i class="fa-solid fa-file-video text-[10px]"></i>
+                <span>رفع فيديو 🎬</span>
+                <input type="file" accept="video/*" class="hidden" onchange="handleGalleryVideoFileUpload(this, '${rowId}')">
+              </label>
+            </div>
             <div class="flex items-center gap-2 flex-wrap">
               <input 
                 type="text" 
@@ -4267,6 +4281,50 @@
       if (fileInput.value) fileInput.value = '';
       playNotificationSound();
       showAppToast(`تم بنجاح إضافة ${successCount} صور دفعة واحدة إلى المعرض! ✨📸`, 'success', 5000);
+    }
+
+    function handleDirectVideoUpload(input, targetInputId) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      showAppToast(`جاري تحميل وقراءة الفيديو (${(file.size / (1024 * 1024)).toFixed(1)} MB)... 🎬`, 'info', 5000);
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        const targetInput = document.getElementById(targetInputId);
+        if (targetInput) {
+          targetInput.value = dataUrl;
+          updateProductVideoPreview(dataUrl);
+        }
+        playNotificationSound();
+        showAppToast('تم تحميل وتعيين الفيديو بنجاح! 🎬✨', 'success');
+      };
+      reader.onerror = function() {
+        showAppToast('تعذر قراءة ملف الفيديو', 'error');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleGalleryVideoFileUpload(input, rowId) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      const row = document.getElementById(rowId);
+      if (!row) return;
+
+      showAppToast(`جاري تحميل فيديو المعرض (${(file.size / (1024 * 1024)).toFixed(1)} MB)... 🎬`, 'info', 5000);
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        const vidInp = row.querySelector('.gallery-video-url-input');
+        if (vidInp) vidInp.value = dataUrl;
+        playNotificationSound();
+        showAppToast('تم تحميل فيديو المعرض بنجاح! 🎬✨', 'success');
+      };
+      reader.onerror = function() {
+        showAppToast('تعذر قراءة ملف الفيديو', 'error');
+      };
+      reader.readAsDataURL(file);
     }
 
     function initGalleryDragAndDrop() {
