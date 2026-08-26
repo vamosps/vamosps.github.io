@@ -115,26 +115,31 @@
     <!-- Main Product Multi-Image Showcase & Gallery -->
     <section class="space-y-3">
       
-      <!-- Main Featured Image Container with Slider Controls -->
+      <!-- Main Featured Image & Video Showcase with Slider Controls -->
       <div class="rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl bg-zinc-950 relative group w-full select-none flex items-center justify-center min-h-[320px] sm:min-h-[380px]">
         
-        <!-- Main Image (object-contain ensures 100% of the image is shown without cropping) -->
+        <!-- Main Image (shown when active item is an image) -->
         <img 
           id="mainImage" 
-          src="IMG_4030.jpg" 
+          src="https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800" 
           onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800';"
           alt="طقم أساور كابلز لاكوست - Vamos" 
           class="w-full h-80 sm:h-96 object-contain p-1 transition-all duration-300 transform group-hover:scale-102"
         >
 
+        <!-- Main Video Container (shown when active item is a video) -->
+        <div id="mainVideoPlayerContainer" class="hidden w-full h-80 sm:h-96 bg-black flex items-center justify-center relative overflow-hidden">
+          <!-- Injected dynamically by JS -->
+        </div>
+
         <!-- Top Badges -->
-        <div class="absolute top-3 left-3 bg-black/75 backdrop-blur-md text-amber-400 text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-lg border border-amber-500/30 flex items-center gap-1 shadow-lg">
+        <div class="absolute top-3 left-3 bg-black/75 backdrop-blur-md text-amber-400 text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-lg border border-amber-500/30 flex items-center gap-1 shadow-lg pointer-events-none z-10">
           <i class="fa-solid fa-star text-[10px]"></i>
           <span id="t_bestseller">الأكثر مبيعاً ⭐</span>
         </div>
 
-        <div class="absolute top-3 right-3 bg-black/75 backdrop-blur-md text-zinc-200 text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg border border-zinc-700/60 shadow flex items-center gap-1">
-          <i class="fa-solid fa-camera text-amber-400 text-[9px]"></i>
+        <div class="absolute top-3 right-3 bg-black/75 backdrop-blur-md text-zinc-200 text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg border border-zinc-700/60 shadow flex items-center gap-1 pointer-events-none z-10">
+          <i id="galleryMediaTypeIcon" class="fa-solid fa-camera text-amber-400 text-[9px]"></i>
           <span id="galleryCounter">1 / 4</span>
         </div>
 
@@ -142,8 +147,8 @@
         <button 
           type="button" 
           onclick="navigateGallery(-1)" 
-          class="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/10 backdrop-blur-md text-xs cursor-pointer shadow-lg active:scale-95"
-          title="الصورة السابقة"
+          class="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/10 backdrop-blur-md text-xs cursor-pointer shadow-lg active:scale-95 z-20"
+          title="العنصر السابق"
         >
           <i class="fa-solid fa-chevron-left"></i>
         </button>
@@ -151,8 +156,8 @@
         <button 
           type="button" 
           onclick="navigateGallery(1)" 
-          class="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/10 backdrop-blur-md text-xs cursor-pointer shadow-lg active:scale-95"
-          title="الصورة التالية"
+          class="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/10 backdrop-blur-md text-xs cursor-pointer shadow-lg active:scale-95 z-20"
+          title="العنصر التالي"
         >
           <i class="fa-solid fa-chevron-right"></i>
         </button>
@@ -1150,13 +1155,19 @@
           if (flagship) {
             // 1. If explicit gallery array exists and has valid items
             if (Array.isArray(flagship.gallery) && flagship.gallery.length > 0) {
-              const cleaned = flagship.gallery.map((g, idx) => ({
-                id: g.id || `dyn-gallery-${idx}`,
-                title: g.title || `${flagship.title} - ${g.color || ''}`,
-                color: g.color || '',
-                src: g.src || g.image || flagship.image || '',
-                fallback: g.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
-              })).filter(g => Boolean(g.src));
+              const cleaned = flagship.gallery.map((g, idx) => {
+                const isVid = g.type === 'video' || Boolean(g.videoUrl);
+                return {
+                  id: g.id || `dyn-gallery-${idx}`,
+                  type: isVid ? 'video' : 'image',
+                  title: g.title || `${flagship.title} - ${g.color || ''}`,
+                  color: g.color || '',
+                  src: g.src || g.image || g.poster || (isVid ? '' : flagship.image) || '',
+                  poster: g.poster || (isVid ? g.src : '') || '',
+                  videoUrl: g.videoUrl || (isVid ? g.src : '') || '',
+                  fallback: g.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
+                };
+              }).filter(g => Boolean(g.src || g.videoUrl));
               if (cleaned.length > 0) return cleaned;
             }
 
@@ -1168,6 +1179,7 @@
                 if (cImg) {
                   dynamicGallery.push({
                     id: `dyn-col-${idx}`,
+                    type: 'image',
                     title: `${flagship.title} (${c.name || ''})`,
                     color: c.name || '',
                     src: cImg,
@@ -1181,6 +1193,7 @@
             if (flagship.image && !dynamicGallery.some(img => img.src === flagship.image)) {
               dynamicGallery.unshift({
                 id: 'dyn-main-img',
+                type: 'image',
                 title: flagship.title,
                 color: (flagship.colors && flagship.colors[0]?.name) || '',
                 src: flagship.image,
@@ -1193,7 +1206,19 @@
         }
         const stored = JSON.parse(localStorage.getItem('vamos_flagship_gallery') || 'null');
         if (Array.isArray(stored) && stored.length > 0) {
-          const cleanedStored = stored.filter(g => Boolean(g.src));
+          const cleanedStored = stored.map((g, idx) => {
+            const isVid = g.type === 'video' || Boolean(g.videoUrl);
+            return {
+              id: g.id || `stored-gallery-${idx}`,
+              type: isVid ? 'video' : 'image',
+              title: g.title || '',
+              color: g.color || '',
+              src: g.src || g.poster || '',
+              poster: g.poster || '',
+              videoUrl: g.videoUrl || '',
+              fallback: g.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
+            };
+          }).filter(g => Boolean(g.src || g.videoUrl));
           if (cleanedStored.length > 0) return cleanedStored;
         }
         return DEFAULT_GALLERY_IMAGES;
@@ -1216,19 +1241,27 @@
 
       let html = '';
       images.forEach((img, idx) => {
+        const isVid = img.type === 'video' || Boolean(img.videoUrl);
+        const thumbSrc = img.poster || img.src || 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=600';
         html += `
           <button 
             type="button" 
             onclick="setGalleryActiveImage(${idx})"
             id="galleryThumb_${idx}"
-            class="gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 ${idx === 0 ? 'border-amber-400 ring-2 ring-amber-500/30 opacity-100 scale-102' : 'border-zinc-800 opacity-60 hover:opacity-100'} transition cursor-pointer shrink-0 bg-zinc-900 shadow relative"
+            class="gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 ${idx === 0 ? 'border-amber-400 ring-2 ring-amber-500/30 opacity-100 scale-102' : 'border-zinc-800 opacity-60 hover:opacity-100'} transition cursor-pointer shrink-0 bg-zinc-900 shadow relative group"
+            title="${img.title || (isVid ? 'فيديو استعراض' : 'صورة المنتج')}"
           >
             <img 
-              src="${img.src}" 
+              src="${thumbSrc}" 
               onerror="this.onerror=null; this.src='${img.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'}';" 
               class="w-full h-full object-cover" 
               alt="${img.title || 'صورة المنتج'}"
             >
+            ${isVid ? `
+              <div class="absolute inset-0 bg-black/45 flex items-center justify-center text-white pointer-events-none group-hover:scale-110 transition">
+                <i class="fa-solid fa-circle-play text-red-400 text-sm sm:text-base drop-shadow-md"></i>
+              </div>
+            ` : ''}
           </button>
         `;
       });
@@ -1242,24 +1275,65 @@
       if (index >= images.length) index = 0;
 
       currentGalleryIndex = index;
-      const imgData = images[index];
-      if (!imgData) return;
+      const mediaData = images[index];
+      if (!mediaData) return;
       
       const mainImg = document.getElementById('mainImage');
-      if (mainImg) {
+      const videoContainer = document.getElementById('mainVideoPlayerContainer');
+      const isVideo = mediaData.type === 'video' || Boolean(mediaData.videoUrl);
+
+      if (isVideo && videoContainer) {
+        if (mainImg) mainImg.classList.add('hidden');
+        videoContainer.classList.remove('hidden');
+
+        const vUrl = (mediaData.videoUrl || mediaData.src || '').trim();
+        if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
+          let videoId = '';
+          if (vUrl.includes('youtu.be/')) videoId = vUrl.split('youtu.be/')[1].split('?')[0];
+          else if (vUrl.includes('v=')) videoId = vUrl.split('v=')[1].split('&')[0];
+          else if (vUrl.includes('embed/')) videoId = vUrl.split('embed/')[1].split('?')[0];
+          if (videoId) {
+            videoContainer.innerHTML = `
+              <iframe 
+                src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
+                class="w-full h-full" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+              ></iframe>
+            `;
+          }
+        } else {
+          videoContainer.innerHTML = `
+            <video 
+              src="${vUrl}" 
+              controls 
+              playsinline 
+              autoplay 
+              poster="${mediaData.poster || mediaData.src || ''}" 
+              class="w-full h-full object-contain"
+            ></video>
+          `;
+        }
+      } else if (mainImg) {
+        if (videoContainer) {
+          videoContainer.innerHTML = '';
+          videoContainer.classList.add('hidden');
+        }
+        mainImg.classList.remove('hidden');
         mainImg.style.opacity = '0.7';
         mainImg.onerror = function() {
           this.onerror = null;
-          this.src = imgData.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600';
+          this.src = mediaData.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600';
         };
-        mainImg.src = imgData.src;
+        mainImg.src = mediaData.src;
         setTimeout(() => { mainImg.style.opacity = '1'; }, 100);
       }
 
       updateGalleryDisplay();
 
-      if (imgData.color) {
-        syncColorPicker(imgData.color);
+      if (mediaData.color) {
+        syncColorPicker(mediaData.color);
       }
     }
 
@@ -1270,16 +1344,23 @@
     function updateGalleryDisplay() {
       const images = getStoreGalleryImages();
       const counter = document.getElementById('galleryCounter');
+      const icon = document.getElementById('galleryMediaTypeIcon');
+      const curMedia = images[currentGalleryIndex];
+      const isVid = curMedia && (curMedia.type === 'video' || Boolean(curMedia.videoUrl));
+
       if (counter) {
         counter.innerText = `${currentGalleryIndex + 1} / ${images.length}`;
+      }
+      if (icon) {
+        icon.className = isVid ? 'fa-solid fa-circle-play text-red-400 text-[9px]' : 'fa-solid fa-camera text-amber-400 text-[9px]';
       }
 
       // Update thumbnails active border
       document.querySelectorAll('.gallery-thumb-btn').forEach((btn, idx) => {
         if (idx === currentGalleryIndex) {
-          btn.className = 'gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-amber-400 ring-2 ring-amber-500/30 transition cursor-pointer shrink-0 bg-zinc-900 shadow relative opacity-100 scale-102';
+          btn.className = 'gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-amber-400 ring-2 ring-amber-500/30 transition cursor-pointer shrink-0 bg-zinc-900 shadow relative opacity-100 scale-102 group';
         } else {
-          btn.className = 'gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-zinc-800 opacity-60 hover:opacity-100 transition cursor-pointer shrink-0 bg-zinc-900 shadow relative';
+          btn.className = 'gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-zinc-800 opacity-60 hover:opacity-100 transition cursor-pointer shrink-0 bg-zinc-900 shadow relative group';
         }
       });
     }
