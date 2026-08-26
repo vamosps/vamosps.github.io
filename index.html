@@ -2371,16 +2371,17 @@
       }
     }
 
-    function initProductVideo() {
+    function initProductVideo(vUrl) {
       try {
-        const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
         let videoUrl = '';
-        if (Array.isArray(storedProducts) && storedProducts.length > 0) {
-          const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
-          if (flagship && flagship.videoUrl) videoUrl = flagship.videoUrl.trim();
-        }
-        if (!videoUrl) {
-          videoUrl = localStorage.getItem('vamos_product_video_url') || '';
+        if (typeof vUrl === 'string') {
+          videoUrl = vUrl.trim();
+        } else {
+          const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
+          if (Array.isArray(storedProducts) && storedProducts.length > 0) {
+            const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
+            if (flagship && flagship.videoUrl) videoUrl = flagship.videoUrl.trim();
+          }
         }
 
         const sec = document.getElementById('productVideoSection');
@@ -2389,6 +2390,7 @@
 
         if (!videoUrl) {
           sec.classList.add('hidden');
+          container.innerHTML = '';
           return;
         }
 
@@ -2442,7 +2444,7 @@
         price: Number(flagship.price) || 110,
         stock: flagship.stock,
         image: flagship.image || '',
-        videoUrl: flagship.video_url || '',
+        videoUrl: (flagship.video_url || flagship.videoUrl || '').trim(),
         desc: flagship.description || flagship.desc || '',
         colors: Array.isArray(flagship.colors) ? flagship.colors : [],
         gallery: Array.isArray(flagship.gallery) ? flagship.gallery : [],
@@ -2458,6 +2460,8 @@
       }
       if (mappedProduct.videoUrl) {
         localStorage.setItem('vamos_product_video_url', mappedProduct.videoUrl);
+      } else {
+        localStorage.removeItem('vamos_product_video_url');
       }
 
       // Update UI title and description if current language is Arabic (or custom)
@@ -2477,7 +2481,7 @@
 
       initProductGallery();
       initColorPickerButtons();
-      initProductVideo();
+      initProductVideo(mappedProduct.videoUrl);
       initFloatingMiniVideo(mappedProduct.videoUrl);
       updateCalculation();
       console.log('⚡ Live flagship product synchronized from Supabase Cloud:', mappedProduct.title);
@@ -2529,27 +2533,30 @@
     let currentActiveVideoUrl = '';
 
     function initFloatingMiniVideo(vUrl) {
-      if (!vUrl) {
+      let videoUrl = '';
+      if (typeof vUrl === 'string') {
+        videoUrl = vUrl.trim();
+      } else {
         const storedProducts = JSON.parse(localStorage.getItem('vamos_store_products') || 'null');
         if (Array.isArray(storedProducts) && storedProducts.length > 0) {
           const flagship = storedProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship) || storedProducts[0];
-          if (flagship) {
-            vUrl = flagship.videoUrl || (flagship.gallery && flagship.gallery.find(g => g.type === 'video' || g.videoUrl)?.videoUrl) || '';
+          if (flagship && flagship.videoUrl) {
+            videoUrl = flagship.videoUrl.trim();
           }
         }
-        if (!vUrl) vUrl = localStorage.getItem('vamos_product_video_url') || '';
       }
 
       const widget = document.getElementById('floatingMiniVideoWidget');
       const host = document.getElementById('miniVideoPlayerHost');
       if (!widget || !host) return;
 
-      if (!vUrl || !vUrl.trim()) {
+      if (!videoUrl) {
         widget.style.display = 'none';
+        host.innerHTML = '';
         return;
       }
 
-      currentActiveVideoUrl = vUrl.trim();
+      currentActiveVideoUrl = videoUrl;
       widget.style.display = 'flex';
 
       if (currentActiveVideoUrl.includes('youtube.com') || currentActiveVideoUrl.includes('youtu.be')) {

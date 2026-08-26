@@ -4798,6 +4798,8 @@
       localStorage.setItem('vamos_flagship_gallery', JSON.stringify(flagshipGallery));
       if (videoUrl) {
         localStorage.setItem('vamos_product_video_url', videoUrl);
+      } else {
+        localStorage.removeItem('vamos_product_video_url');
       }
 
       // Upsert to Supabase Cloud Database live!
