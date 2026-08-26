@@ -2188,6 +2188,7 @@
       if (enteredPin === actualPin) {
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('adminApp').classList.remove('hidden');
+        localStorage.setItem('vamos_admin_auth', 'true');
         sessionStorage.setItem('vamos_admin_auth', 'true');
         initDashboard();
       } else {
@@ -2198,6 +2199,7 @@
     }
 
     function handleLogout() {
+      localStorage.removeItem('vamos_admin_auth');
       sessionStorage.removeItem('vamos_admin_auth');
       document.getElementById('adminApp').classList.add('hidden');
       document.getElementById('loginScreen').classList.remove('hidden');
@@ -5776,8 +5778,8 @@
       }
     }
 
-    // Auto-login session check
-    if (sessionStorage.getItem('vamos_admin_auth') === 'true') {
+    // Auto-login session check (persists across mobile app launches)
+    if (localStorage.getItem('vamos_admin_auth') === 'true' || sessionStorage.getItem('vamos_admin_auth') === 'true') {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('adminApp').classList.remove('hidden');
       initDashboard();
