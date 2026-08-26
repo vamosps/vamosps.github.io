@@ -2325,6 +2325,12 @@
       };
 
       localStorage.setItem('vamos_store_products', JSON.stringify([mappedProduct]));
+      if (mappedProduct.colors && mappedProduct.colors.length > 0) {
+        localStorage.setItem('vamos_store_colors', JSON.stringify(mappedProduct.colors));
+      }
+      if (mappedProduct.gallery && mappedProduct.gallery.length > 0) {
+        localStorage.setItem('vamos_flagship_gallery', JSON.stringify(mappedProduct.gallery));
+      }
       if (mappedProduct.videoUrl) {
         localStorage.setItem('vamos_product_video_url', mappedProduct.videoUrl);
       }
@@ -2357,6 +2363,7 @@
         const { data, error } = await supabaseClient
           .from('products')
           .select('*')
+          .order('updated_at', { ascending: false })
           .limit(10);
 
         if (!error && Array.isArray(data) && data.length > 0) {

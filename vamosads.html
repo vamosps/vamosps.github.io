@@ -4643,12 +4643,57 @@
       }
 
       let currentProducts = getStoredProducts();
-      let isFlagship = false;
+      let isFlagship = true; // Any product saved from admin dashboard acts as the live flagship showcase on store
+
+      // Create unified multi-media gallery (combining color images + extra images/videos + primary image)
+      const flagshipGallery = [];
+      colorVariants.forEach(c => {
+        if (c.image) {
+          flagshipGallery.push({
+            id: 'col-' + (c.name || '').replace(/\s+/g, '_'),
+            type: 'image',
+            title: `${title} (${c.name})`,
+            color: c.name,
+            src: c.image,
+            poster: '',
+            videoUrl: '',
+            fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
+          });
+        }
+      });
+
+      gallery.forEach((g, i) => {
+        flagshipGallery.push({
+          id: g.id || ('extra-' + (i + 1)),
+          type: g.type || (g.videoUrl ? 'video' : 'image'),
+          title: `${title} - ${g.color || 'استعراض'}`,
+          color: g.color || 'أسود فخم',
+          src: g.src || g.poster || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600',
+          poster: g.poster || '',
+          videoUrl: g.videoUrl || '',
+          fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
+        });
+      });
+
+      if (flagshipGallery.length === 0 && image) {
+        flagshipGallery.push({
+          id: 'img-main',
+          type: 'image',
+          title: title,
+          color: colorVariants[0]?.name || 'أسود فخم',
+          src: image,
+          poster: '',
+          videoUrl: '',
+          fallback: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800'
+        });
+      }
+
+      let syncProductId = 'prod-lacoste-set';
 
       if (editingProductId) {
+        syncProductId = editingProductId;
         const target = currentProducts.find(p => p.id === editingProductId);
         if (target) {
-          isFlagship = target.id === 'prod-lacoste-set' || target.isFlagship;
           target.title = title;
           target.price = price;
           target.stock = stock;
@@ -4656,17 +4701,16 @@
           target.videoUrl = videoUrl;
           target.desc = desc;
           target.colors = colorVariants.length > 0 ? colorVariants : [{ name: 'أسود فخم', hex: '#18181b', image }];
-          target.gallery = gallery;
+          target.gallery = flagshipGallery;
+          target.isFlagship = true;
         }
         editingProductId = null;
         saveProducts(currentProducts);
-        if (isFlagship) {
-          localStorage.setItem('vamos_product_video_url', videoUrl);
-        }
         showAppToast(`تم تحديث بيانات وصور وفيديو المنتج "${title}" بنجاح! ✨`, 'success');
       } else {
+        syncProductId = 'prod-' + Date.now();
         const newProd = {
-          id: 'prod-' + Date.now(),
+          id: syncProductId,
           title: title,
           price: price,
           stock: stock,
@@ -4674,8 +4718,8 @@
           videoUrl: videoUrl,
           desc: desc || 'صنف مجوهرات فاخر جديد متاح للطلب',
           colors: colorVariants.length > 0 ? colorVariants : [{ name: 'أسود فخم', hex: '#18181b', image }],
-          gallery: gallery,
-          isFlagship: false
+          gallery: flagshipGallery,
+          isFlagship: true
         };
         currentProducts.push(newProd);
         saveProducts(currentProducts);
@@ -4683,70 +4727,35 @@
       }
 
       // Sync Flagship Gallery & Store Colors to index.html via localStorage
-      if (isFlagship || currentProducts.length === 1) {
-        // Save store colors
-        localStorage.setItem('vamos_store_colors', JSON.stringify(colorVariants));
-
-        // Create unified gallery from colors + extra gallery
-        const flagshipGallery = [];
-        colorVariants.forEach(c => {
-          if (c.image) {
-            flagshipGallery.push({
-              id: 'col-' + c.name,
-              title: `${title} (${c.name})`,
-              color: c.name,
-              src: c.image,
-              fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
-            });
-          }
-        });
-
-        gallery.forEach((g, i) => {
-          flagshipGallery.push({
-            id: 'extra-' + (i + 1),
-            title: `${title} - ${g.color || 'تفاصيل'}`,
-            color: g.color || 'أسود فخم',
-            src: g.src,
-            fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
-          });
-        });
-
-        if (flagshipGallery.length === 0 && image) {
-          flagshipGallery.push({ id: 'img-main', title, color: colorVariants[0]?.name || 'أسود فخم', src: image, fallback: 'https://images.unsplash.com/photo-1611591475880-990a4244f77c?q=80&w=800' });
-        }
-
-        localStorage.setItem('vamos_flagship_gallery', JSON.stringify(flagshipGallery));
+      localStorage.setItem('vamos_store_colors', JSON.stringify(colorVariants));
+      localStorage.setItem('vamos_flagship_gallery', JSON.stringify(flagshipGallery));
+      if (videoUrl) {
+        localStorage.setItem('vamos_product_video_url', videoUrl);
       }
 
       // Upsert to Supabase Cloud Database live!
       if (supabaseClient) {
         try {
-          const productToSync = isFlagship 
-            ? currentProducts.find(p => p.id === 'prod-lacoste-set' || p.isFlagship)
-            : currentProducts[currentProducts.length - 1];
-
-          if (productToSync) {
-            const syncGallery = (flagshipGallery && flagshipGallery.length > 0)
-              ? flagshipGallery
-              : ((productToSync.gallery && productToSync.gallery.length > 0) ? productToSync.gallery : [{ id: 'img-main', title: productToSync.title, src: productToSync.image, color: '' }]);
-
-            supabaseClient.from('products').upsert([{
-              id: productToSync.id || 'prod-lacoste-set',
-              title: productToSync.title,
-              price: productToSync.price,
-              stock: productToSync.stock,
-              image: productToSync.image,
-              video_url: productToSync.videoUrl || '',
-              description: productToSync.desc || '',
-              colors: productToSync.colors || [],
-              gallery: syncGallery,
-              is_flagship: isFlagship || productToSync.isFlagship || false,
-              updated_at: new Date().toISOString()
-            }]).then(({ error }) => {
-              if (error) console.warn('Supabase product upsert error:', error);
-              else console.log('✅ Product synced to Supabase Cloud live:', productToSync.title);
-            });
-          }
+          supabaseClient.from('products').upsert([{
+            id: 'prod-lacoste-set', // Always update flagship row for customer store index.html
+            title: title,
+            price: price,
+            stock: stock,
+            image: image,
+            video_url: videoUrl || '',
+            description: desc || '',
+            colors: colorVariants,
+            gallery: flagshipGallery,
+            is_flagship: true,
+            updated_at: new Date().toISOString()
+          }]).then(({ error }) => {
+            if (error) {
+              console.warn('Supabase product upsert error:', error);
+            } else {
+              console.log('✅ Product & Gallery synced to Supabase Cloud live:', title);
+              showAppToast('تمت المزامنة السحابية اللحظية مع متجر الزبائن بنجاح! ⚡', 'success');
+            }
+          });
         } catch (sErr) {
           console.warn('Supabase product sync error:', sErr);
         }
