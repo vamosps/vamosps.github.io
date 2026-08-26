@@ -1,0 +1,26 @@
+{
+  "name": "Vamos JEWELRY | متجر فاموس للمجوهرات",
+  "short_name": "Vamos JEWELRY",
+  "description": "المتجر الرسمي لطقم أساور كابلز لاكوست الفاخر والمجوهرات الملكية",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=192&auto=format&fit=crop",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=512&auto=format&fit=crop",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
