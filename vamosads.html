@@ -4654,21 +4654,35 @@
         }
       }
 
-      // Populate extra gallery media (images + videos)
+      // Populate extra gallery media (images + videos) - excluding duplicate color swatch images
       const rowCont = document.getElementById('productGalleryRowsContainer');
       if (rowCont) {
         rowCont.innerHTML = '';
+        const colorImages = new Set((product.colors || []).map(c => (typeof c === 'object' && c ? (c.image || c.src || '') : String(c)).trim()).filter(Boolean));
         if (product.gallery && Array.isArray(product.gallery)) {
+          const seenMedia = new Set();
           product.gallery.forEach(item => {
             if (typeof item === 'string') {
-              addGalleryImageRow(item, 'أسود فخم', 'image', '', '');
+              const clean = item.trim();
+              if (clean && !colorImages.has(clean) && !seenMedia.has(clean)) {
+                seenMedia.add(clean);
+                addGalleryImageRow(clean, 'أسود فخم', 'image', '', '');
+              }
             } else if (typeof item === 'object' && item !== null) {
               const type = item.type || (item.videoUrl ? 'video' : 'image');
-              const src = item.src || item.image || item.poster || '';
+              const src = (item.src || item.image || item.poster || '').trim();
               const color = item.color || 'أسود فخم';
-              const videoUrl = item.videoUrl || item.video_url || (type === 'video' ? item.src : '');
-              const poster = item.poster || (type === 'video' ? item.src : '');
-              addGalleryImageRow(src, color, type, videoUrl, poster);
+              const videoUrl = (item.videoUrl || item.video_url || (type === 'video' ? item.src : '') || '').trim();
+              const poster = (item.poster || (type === 'video' ? item.src : '') || '').trim();
+              
+              // Skip if it's already a color variant swatch image
+              const isColorSwatch = (item.id && String(item.id).startsWith('col-')) || (type === 'image' && colorImages.has(src));
+              const key = type === 'video' ? ('vid:' + videoUrl) : ('img:' + src);
+
+              if (!isColorSwatch && (src || videoUrl) && !seenMedia.has(key)) {
+                seenMedia.add(key);
+                addGalleryImageRow(src, color, type, videoUrl, poster);
+              }
             }
           });
         }
@@ -4770,16 +4784,20 @@
       let currentProducts = getStoredProducts();
       let isFlagship = true; // Any product saved from admin dashboard acts as the live flagship showcase on store
 
-      // Create unified multi-media gallery (combining color images + extra images/videos + primary image)
+      // Create unified multi-media gallery (combining color images + extra images/videos without duplicates)
       const flagshipGallery = [];
+      const seenMedia = new Set();
+
       colorVariants.forEach(c => {
-        if (c.image) {
+        const cleanImg = (c.image || '').trim();
+        if (cleanImg && !seenMedia.has(cleanImg)) {
+          seenMedia.add(cleanImg);
           flagshipGallery.push({
             id: 'col-' + (c.name || '').replace(/\s+/g, '_'),
             type: 'image',
             title: `${title} (${c.name})`,
             color: c.name,
-            src: c.image,
+            src: cleanImg,
             poster: '',
             videoUrl: '',
             fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
@@ -4788,16 +4806,25 @@
       });
 
       gallery.forEach((g, i) => {
-        flagshipGallery.push({
-          id: g.id || ('extra-' + (i + 1)),
-          type: g.type || (g.videoUrl ? 'video' : 'image'),
-          title: `${title} - ${g.color || 'استعراض'}`,
-          color: g.color || 'أسود فخم',
-          src: g.src || g.poster || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600',
-          poster: g.poster || '',
-          videoUrl: g.videoUrl || '',
-          fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
-        });
+        const gType = g.type || (g.videoUrl ? 'video' : 'image');
+        const gSrc = (g.src || g.poster || '').trim();
+        const gVid = (g.videoUrl || '').trim();
+        const mediaKey = gType === 'video' ? ('vid:' + gVid) : ('img:' + gSrc);
+
+        if ((gSrc || gVid) && !seenMedia.has(mediaKey) && !seenMedia.has(gSrc)) {
+          seenMedia.add(mediaKey);
+          if (gSrc) seenMedia.add(gSrc);
+          flagshipGallery.push({
+            id: g.id || ('extra-' + (i + 1)),
+            type: gType,
+            title: `${title} - ${g.color || 'استعراض'}`,
+            color: g.color || 'أسود فخم',
+            src: gSrc || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600',
+            poster: g.poster || '',
+            videoUrl: gVid,
+            fallback: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600'
+          });
+        }
       });
 
       if (flagshipGallery.length === 0 && image) {

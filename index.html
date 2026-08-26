@@ -1331,19 +1331,28 @@
           if (flagship) {
             // 1. If explicit gallery array exists and has valid items
             if (Array.isArray(flagship.gallery) && flagship.gallery.length > 0) {
-              const cleaned = flagship.gallery.map((g, idx) => {
+              const seen = new Set();
+              const cleaned = [];
+              flagship.gallery.forEach((g, idx) => {
                 const isVid = g.type === 'video' || Boolean(g.videoUrl);
-                return {
-                  id: g.id || `dyn-gallery-${idx}`,
-                  type: isVid ? 'video' : 'image',
-                  title: g.title || `${flagship.title} - ${g.color || ''}`,
-                  color: g.color || '',
-                  src: g.src || g.image || g.poster || (isVid ? '' : flagship.image) || '',
-                  poster: g.poster || (isVid ? g.src : '') || '',
-                  videoUrl: g.videoUrl || (isVid ? g.src : '') || '',
-                  fallback: g.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
-                };
-              }).filter(g => Boolean(g.src || g.videoUrl));
+                const gSrc = (g.src || g.image || g.poster || (isVid ? '' : flagship.image) || '').trim();
+                const gVid = (g.videoUrl || (isVid ? g.src : '') || '').trim();
+                const key = isVid ? ('vid:' + gVid) : ('img:' + gSrc);
+
+                if ((gSrc || gVid) && !seen.has(key)) {
+                  seen.add(key);
+                  cleaned.push({
+                    id: g.id || `dyn-gallery-${idx}`,
+                    type: isVid ? 'video' : 'image',
+                    title: g.title || `${flagship.title} - ${g.color || ''}`,
+                    color: g.color || '',
+                    src: gSrc,
+                    poster: g.poster || (isVid ? g.src : '') || '',
+                    videoUrl: gVid,
+                    fallback: g.fallback || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800'
+                  });
+                }
+              });
               if (cleaned.length > 0) return cleaned;
             }
 
