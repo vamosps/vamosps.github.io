@@ -65,6 +65,20 @@
     .whatsapp-pulse {
       animation: pulse-subtle 2.5s infinite ease-in-out;
     }
+    /* Hide scrollbars cleanly while retaining smooth swipe & scroll */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .smooth-scroll-x {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-28 relative">
@@ -171,7 +185,7 @@
           <span id="t_galleryHint" class="text-[10px] text-zinc-500">اضغط للمعاينة</span>
         </div>
         
-        <div id="galleryThumbnailsContainer" class="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin">
+        <div id="galleryThumbnailsContainer" class="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar smooth-scroll-x select-none">
           <!-- Thumbnails injected and managed by JS -->
         </div>
       </div>
@@ -1359,6 +1373,10 @@
       document.querySelectorAll('.gallery-thumb-btn').forEach((btn, idx) => {
         if (idx === currentGalleryIndex) {
           btn.className = 'gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-amber-400 ring-2 ring-amber-500/30 transition cursor-pointer shrink-0 bg-zinc-900 shadow relative opacity-100 scale-102 group';
+          // Smoothly bring active thumbnail into viewport
+          try {
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          } catch(e) {}
         } else {
           btn.className = 'gallery-thumb-btn w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-zinc-800 opacity-60 hover:opacity-100 transition cursor-pointer shrink-0 bg-zinc-900 shadow relative group';
         }

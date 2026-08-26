@@ -54,6 +54,15 @@
       background: #27272a;
       border-radius: 4px;
     }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
     @media print {
       body * { visibility: hidden; }
       #printableWaybill, #printableWaybill *,
@@ -3956,7 +3965,7 @@
             <span>اختر من صور المنتج والمعرض المتاحة بنقرة واحدة:</span>
             <button type="button" onclick="document.getElementById('pickerTray_${rowId}').classList.add('hidden')" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+          <div class="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar select-none">
             ${html}
           </div>
         </div>
